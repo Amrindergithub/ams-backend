@@ -1,0 +1,60 @@
+{
+  "name": "attendance-management-system",
+  "version": "1.0.0",
+  "description": "Template for node.js REST API (includes auth)",
+  "main": "index.js",
+  "scripts": {
+    "dev": "NODE_ENV=dev nodemon index.js",
+    "start": "NODE_ENV=prod node index.js",
+    "format": "prettier \"./**/*.{js,html,json}\" --write",
+    "lint": "eslint \"./**/*.js\"",
+    "test": "mocha tests/v1/test --exit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fayaz07/attendance-management-system.git"
+  },
+  "keywords": [],
+  "author": " (@fayaz07)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fayaz07/attendance-management-system/issues"
+  },
+  "homepage": "https://github.com/fayaz07/attendance-management-system#readme",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-waffle": "^2.0.6",
+    "chai": "^4.5.0",
+    "chai-http": "^4.3.0",
+    "eslint": "^7.6.0",
+    "eslint-config-prettier": "^6.11.0",
+    "ethereum-waffle": "^4.0.10",
+    "ethers": "^5.8.0",
+    "hardhat": "^2.28.6",
+    "mocha": "^8.1.1",
+    "nodemon": "^2.0.4",
+    "prettier": "^2.2.0"
+  },
+  "dependencies": {
+    "@hapi/joi": "^17.1.1",
+    "@sendgrid/mail": "^7.4.0",
+    "axios": "^0.21.1",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "generate-password": "^1.6.0",
+    "helmet": "^4.2.0",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.29.1",
+    "mongoose": "^5.11.7",
+    "multer": "^1.4.2",
+    "nodemailer": "^6.4.16",
+    "otp-generator": "^1.1.0",
+    "pug": "^3.0.1",
+    "swagger-ui-express": "^4.1.5",
+    "yamljs": "^0.3.0"
+  }
+}
