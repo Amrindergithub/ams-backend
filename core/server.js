@@ -88,6 +88,8 @@ function _setRoutes(app) {
   app.use("/api/v1/student", studentRoute);
   //  attendance middleware
   app.use("/api/v1/attendance", attendanceRoute);
+  // blockchain attendance middleware
+  app.use("/api/v1/blockchain", require("../api/v1/routes/blockchain_attendance"));
 
   // admin routes
   // auth middleware
