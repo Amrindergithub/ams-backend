@@ -15,10 +15,8 @@ router.post("/check-in", async (req, res) => {
       });
     }
 
-    // Generate hash from attendance data
     const attendanceHash = blockchain.generateAttendanceHash(studentId, courseId, date);
 
-    // Check if already recorded
     const existing = await BlockchainAttendance.findOne({ attendanceHash });
     if (existing) {
       return res.status(400).json({
@@ -27,10 +25,8 @@ router.post("/check-in", async (req, res) => {
       });
     }
 
-    // Record on blockchain
     const { txHash, blockNumber } = await blockchain.recordOnChain(attendanceHash);
 
-    // Save to MongoDB
     const record = new BlockchainAttendance({
       studentId,
       courseId,
@@ -92,6 +88,47 @@ router.get("/records", async (req, res) => {
         onChainCount,
       },
     });
+  } catch (error) {
+    internalServerError(res, error);
+  }
+});
+
+// DELETE - Remove a record from MongoDB (on-chain record remains immutable)
+router.delete("/records/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const record = await BlockchainAttendance.findByIdAndDelete(id);
+
+    if (!record) {
+      return res.status(404).json({
+        status: "failed",
+        message: "Record not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Off-chain record deleted. On-chain record remains immutable.",
+      data: { deletedId: id },
+    });
+  } catch (error) {
+    internalServerError(res, error);
+  }
+});
+
+// GET - Export records as CSV
+router.get("/export/csv", async (req, res) => {
+  try {
+    const records = await BlockchainAttendance.find().sort({ createdAt: -1 });
+
+    const header = "Student ID,Course,Date,Attendance Hash,Tx Hash,Block,Verified,Created At\n";
+    const rows = records.map((r) =>
+      `${r.studentId},${r.courseId},${r.date},${r.attendanceHash},${r.txHash},${r.blockNumber},${r.verified},${r.createdAt}`
+    ).join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=attendance-records.csv");
+    return res.status(200).send(header + rows);
   } catch (error) {
     internalServerError(res, error);
   }

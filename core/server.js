@@ -90,6 +90,12 @@ function _setRoutes(app) {
   app.use("/api/v1/attendance", attendanceRoute);
   // blockchain attendance middleware
   app.use("/api/v1/blockchain", require("../api/v1/routes/blockchain_attendance"));
+  // session middleware
+  app.use("/api/v1/sessions", require("../api/v1/routes/session"));
+  // student profile middleware
+  app.use("/api/v1/students", require("../api/v1/routes/student_profile"));
+  // nft middleware
+  app.use("/api/v1/nft", require("../api/v1/routes/nft"));
 
   // admin routes
   // auth middleware

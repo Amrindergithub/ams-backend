@@ -2,10 +2,14 @@ const hre = require("hardhat");
 
 async function main() {
   const AttendanceRecord = await hre.ethers.getContractFactory("AttendanceRecord");
-  const contract = await AttendanceRecord.deploy();
-  await contract.deployed();
+  const attendance = await AttendanceRecord.deploy();
+  await attendance.deployed();
+  console.log("AttendanceRecord deployed to:", attendance.address);
 
-  console.log("AttendanceRecord deployed to:", contract.address);
+  const AttendanceNFT = await hre.ethers.getContractFactory("AttendanceNFT");
+  const nft = await AttendanceNFT.deploy();
+  await nft.deployed();
+  console.log("AttendanceNFT deployed to:", nft.address);
 }
 
 main()
