@@ -47,6 +47,7 @@ module.exports.registerWithEmail = async (req, res, registerRole) => {
     password: hashedPassword,
     role: usersRole,
     provider: Headers.EMAIL_KEY,
+    status: AccountConstants.accountStatus.active,
   });
 
   // creating user in database
@@ -91,6 +92,7 @@ module.exports.registerAsAdmin = async (req, res) => {
     password: hashedPassword,
     role: AccountConstants.accRoles.admin,
     provider: Headers.EMAIL_KEY,
+    status: AccountConstants.accountStatus.active,
   });
 
   // creating user in database

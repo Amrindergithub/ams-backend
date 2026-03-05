@@ -35,6 +35,41 @@
       "artifacts": [
         "AttendanceRecord"
       ]
+    },
+    "/Users/amrinder/Desktop/UNI/3rd year/CN6035/Phase 1/ams-backend-master/contracts/AttendanceNFT.sol": {
+      "lastModificationDate": 1772660459493,
+      "contentHash": "4f31310f11eb9d12fb756018b86d3136",
+      "sourceName": "contracts/AttendanceNFT.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "AttendanceNFT"
+      ]
     }
   }
 }

@@ -1,42 +1,54 @@
 import React from "react";
-import { Link } from "react-router-dom";
 
-const Navbar = ({ walletAddress }) => {
+const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) => {
   return (
-    <nav style={styles.nav}>
-      <h2 style={styles.logo}>AMS DApp</h2>
-      <div style={styles.links}>
-        <Link to="/" style={styles.link}>Dashboard</Link>
-        <Link to="/check-in" style={styles.link}>Check In</Link>
-        <Link to="/verify" style={styles.link}>Verify</Link>
+    <header className="navbar">
+      <div className="navbar-left">
+        <button className="navbar-toggle" onClick={onToggleSidebar}>
+          &#9776;
+        </button>
+        <span className="navbar-title">Blockchain Attendance Management</span>
       </div>
-      <div style={styles.wallet}>
-        {walletAddress
-          ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-          : "Not Connected"}
+      <div className="navbar-right">
+        <div className="network-badge">
+          <span className="network-dot"></span>
+          Ganache Local
+        </div>
+        {walletAddress ? (
+          <button className="wallet-btn">
+            <span className="wallet-identicon"></span>
+            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+          </button>
+        ) : (
+          <button className="wallet-btn wallet-btn-connect" onClick={onConnect}>
+            Connect Wallet
+          </button>
+        )}
+        {user && (
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+              {user.name || user.email}
+            </span>
+            <button
+              onClick={onLogout}
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-color)",
+                color: "var(--text-secondary)",
+                padding: "6px 14px",
+                borderRadius: "var(--radius-sm)",
+                cursor: "pointer",
+                fontSize: "12px",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        )}
       </div>
-    </nav>
+    </header>
   );
-};
-
-const styles = {
-  nav: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "15px 30px",
-    backgroundColor: "#1a1a2e",
-    color: "#fff",
-  },
-  logo: { margin: 0, fontSize: "20px" },
-  links: { display: "flex", gap: "20px" },
-  link: { color: "#e0e0e0", textDecoration: "none", fontSize: "16px" },
-  wallet: {
-    backgroundColor: "#16213e",
-    padding: "8px 16px",
-    borderRadius: "8px",
-    fontSize: "14px",
-  },
 };
 
 export default Navbar;

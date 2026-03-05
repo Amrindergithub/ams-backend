@@ -1,15 +1,36 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import CheckIn from "./pages/CheckIn";
 import Verify from "./pages/Verify";
+import Transactions from "./pages/Transactions";
+import Analytics from "./pages/Analytics";
+import Login from "./pages/Login";
+import Sessions from "./pages/Sessions";
+import SessionDetail from "./pages/SessionDetail";
+import ScanQR from "./pages/ScanQR";
+import Students from "./pages/Students";
+import StudentView from "./pages/StudentView";
+import Certificates from "./pages/Certificates";
+import MyCertificates from "./pages/MyCertificates";
 import { connectWallet, isWalletConnected } from "./utils/wallet";
+import "./App.css";
 
 function App() {
   const [walletAddress, setWalletAddress] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem("userEmail");
+    const savedName = localStorage.getItem("userName");
+    const savedRole = localStorage.getItem("userRole");
+    if (savedEmail) {
+      setUser({ email: savedEmail, name: savedName, role: savedRole || "admin" });
+    }
+
     const checkWallet = async () => {
       const connected = await isWalletConnected();
       if (connected && window.ethereum) {
@@ -18,49 +39,104 @@ function App() {
       }
     };
     checkWallet();
+
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", (accounts) => {
+        setWalletAddress(accounts[0] || null);
+      });
+    }
   }, []);
 
   const handleConnect = async () => {
     const wallet = await connectWallet();
-    if (wallet) {
-      setWalletAddress(wallet.address);
-    }
+    if (wallet) setWalletAddress(wallet.address);
   };
+
+  const handleLogin = (userData) => setUser(userData);
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("studentId");
+    setUser(null);
+  };
+
+  if (!user) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/admin/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/admin/register" element={<Login onLogin={handleLogin} />} />
+          <Route path="/student/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/student/register" element={<Login onLogin={handleLogin} />} />
+          <Route path="/" element={
+            <div className="landing-page">
+              <div className="landing-container">
+                <div className="login-brand-icon" style={{ width: "64px", height: "64px", fontSize: "28px", margin: "0 auto 24px" }}>A</div>
+                <h1 style={{ fontSize: "36px", marginBottom: "12px" }}>AMS DApp</h1>
+                <p style={{ color: "var(--text-secondary)", fontSize: "16px", marginBottom: "48px" }}>Blockchain-Verified Attendance Management System</p>
+                <div style={{ display: "flex", gap: "20px", justifyContent: "center" }}>
+                  <a href="/admin/login" className="landing-btn landing-btn-admin">Admin / Lecturer Portal</a>
+                  <a href="/student/login" className="landing-btn landing-btn-student">Student Portal</a>
+                </div>
+                <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "40px" }}>University of East London &middot; 2025/26</p>
+              </div>
+            </div>
+          } />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    );
+  }
+
+  const isAdmin = user.role === "admin";
 
   return (
     <Router>
-      <Navbar walletAddress={walletAddress} />
-      {!walletAddress && (
-        <div style={styles.connectBar}>
-          <button onClick={handleConnect} style={styles.connectBtn}>
-            Connect MetaMask Wallet
-          </button>
+      <div className={`app-layout ${isAdmin ? "theme-admin" : "theme-student"}`}>
+        <Sidebar isOpen={sidebarOpen} role={user.role} />
+        <div className={`main-area ${sidebarOpen ? "" : "sidebar-closed"}`}>
+          <Navbar
+            walletAddress={walletAddress}
+            onConnect={handleConnect}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            user={user}
+            onLogout={handleLogout}
+          />
+          <main className="content">
+            <Routes>
+              {isAdmin ? (
+                <>
+                  <Route path="/" element={<Navigate to="/admin" />} />
+                  <Route path="/admin" element={<Dashboard />} />
+                  <Route path="/admin/sessions" element={<Sessions />} />
+                  <Route path="/admin/sessions/:id" element={<SessionDetail />} />
+                  <Route path="/admin/students" element={<Students />} />
+                  <Route path="/admin/certificates" element={<Certificates />} />
+                  <Route path="/admin/check-in" element={<CheckIn walletAddress={walletAddress} />} />
+                  <Route path="/admin/verify" element={<Verify />} />
+                  <Route path="/admin/transactions" element={<Transactions />} />
+                  <Route path="/admin/analytics" element={<Analytics />} />
+                  <Route path="*" element={<Navigate to="/admin" />} />
+                </>
+              ) : (
+                <>
+                  <Route path="/" element={<Navigate to="/student" />} />
+                  <Route path="/student" element={<StudentView />} />
+                  <Route path="/student/scan" element={<ScanQR walletAddress={walletAddress} />} />
+                  <Route path="/student/certificates" element={<MyCertificates />} />
+                  <Route path="/student/verify" element={<Verify />} />
+                  <Route path="*" element={<Navigate to="/student" />} />
+                </>
+              )}
+            </Routes>
+          </main>
         </div>
-      )}
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/check-in" element={<CheckIn walletAddress={walletAddress} />} />
-        <Route path="/verify" element={<Verify />} />
-      </Routes>
+      </div>
     </Router>
   );
 }
-
-const styles = {
-  connectBar: {
-    textAlign: "center",
-    padding: "15px",
-    backgroundColor: "#fff3cd",
-  },
-  connectBtn: {
-    padding: "10px 24px",
-    fontSize: "16px",
-    backgroundColor: "#f6851b",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-};
 
 export default App;

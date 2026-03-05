@@ -20,74 +20,92 @@ const Dashboard = () => {
     fetchRecords();
   }, []);
 
-  if (loading) return <div style={styles.container}><p>Loading...</p></div>;
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div>
+        Loading records...
+      </div>
+    );
+  }
+
+  const uniqueStudents = [...new Set(records.map((r) => r.studentId))].length;
+  const uniqueCourses = [...new Set(records.map((r) => r.courseId))].length;
 
   return (
-    <div style={styles.container}>
-      <h1>Attendance Dashboard</h1>
-      <div style={styles.statsRow}>
-        <div style={styles.statCard}>
-          <h3>Off-Chain Records</h3>
-          <p style={styles.statNumber}>{records.length}</p>
+    <div>
+      <div className="page-header">
+        <h1>Dashboard</h1>
+        <p>Overview of all blockchain-verified attendance records</p>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-card-label">Total Records</div>
+          <div className="stat-card-value accent">{records.length}</div>
+          <div className="stat-card-footer">Stored in MongoDB</div>
         </div>
-        <div style={styles.statCard}>
-          <h3>On-Chain Records</h3>
-          <p style={styles.statNumber}>{onChainCount}</p>
+        <div className="stat-card">
+          <div className="stat-card-label">On-Chain Records</div>
+          <div className="stat-card-value success">{onChainCount}</div>
+          <div className="stat-card-footer">Verified on Ganache</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-label">Unique Students</div>
+          <div className="stat-card-value warning">{uniqueStudents}</div>
+          <div className="stat-card-footer">Distinct student IDs</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-label">Courses Tracked</div>
+          <div className="stat-card-value accent">{uniqueCourses}</div>
+          <div className="stat-card-footer">Active modules</div>
         </div>
       </div>
 
-      <h2>Recent Records</h2>
-      {records.length === 0 ? (
-        <p>No attendance records yet.</p>
-      ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Student ID</th>
-              <th style={styles.th}>Course</th>
-              <th style={styles.th}>Date</th>
-              <th style={styles.th}>Tx Hash</th>
-              <th style={styles.th}>Verified</th>
-            </tr>
-          </thead>
-          <tbody>
-            {records.map((r) => (
-              <tr key={r._id}>
-                <td style={styles.td}>{r.studentId}</td>
-                <td style={styles.td}>{r.courseId}</td>
-                <td style={styles.td}>{r.date}</td>
-                <td style={styles.td}>{r.txHash ? `${r.txHash.slice(0, 10)}...` : "N/A"}</td>
-                <td style={styles.td}>{r.verified ? "Yes" : "No"}</td>
+      <div className="data-table-wrapper">
+        <div className="data-table-header">
+          <h2>Recent Attendance Records</h2>
+        </div>
+        {records.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">&#128203;</div>
+            <p>No attendance records yet. Use Check In to add one.</p>
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Student ID</th>
+                <th>Course</th>
+                <th>Date</th>
+                <th>Tx Hash</th>
+                <th>Block</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {records.map((r) => (
+                <tr key={r._id}>
+                  <td><strong>{r.studentId}</strong></td>
+                  <td>{r.courseId}</td>
+                  <td>{r.date}</td>
+                  <td className="mono">
+                    {r.txHash ? `${r.txHash.slice(0, 14)}...` : "N/A"}
+                  </td>
+                  <td className="mono">{r.blockNumber || "N/A"}</td>
+                  <td>
+                    <span className={`badge ${r.verified ? "badge-success" : "badge-pending"}`}>
+                      {r.verified ? "\u2713 Verified" : "Pending"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
-};
-
-const styles = {
-  container: { padding: "30px", maxWidth: "900px", margin: "0 auto" },
-  statsRow: { display: "flex", gap: "20px", marginBottom: "30px" },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#16213e",
-    color: "#fff",
-    padding: "20px",
-    borderRadius: "10px",
-    textAlign: "center",
-  },
-  statNumber: { fontSize: "36px", margin: "10px 0" },
-  table: { width: "100%", borderCollapse: "collapse", marginTop: "10px" },
-  th: {
-    textAlign: "left",
-    padding: "12px",
-    backgroundColor: "#1a1a2e",
-    color: "#fff",
-    borderBottom: "2px solid #ddd",
-  },
-  td: { padding: "12px", borderBottom: "1px solid #eee" },
 };
 
 export default Dashboard;

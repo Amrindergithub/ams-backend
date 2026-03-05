@@ -17,89 +17,87 @@ const Verify = () => {
       const res = await verifyAttendance(hash);
       setResult(res.data.data);
     } catch (err) {
-      setError("Failed to verify attendance");
+      setError("Failed to verify attendance on blockchain");
     }
     setLoading(false);
   };
 
   return (
-    <div style={styles.container}>
-      <h1>Verify Attendance</h1>
-      <form onSubmit={handleVerify} style={styles.form}>
-        <div style={styles.field}>
-          <label>Attendance Hash</label>
-          <input
-            type="text"
-            value={hash}
-            onChange={(e) => setHash(e.target.value)}
-            placeholder="0x..."
-            style={styles.input}
-            required
-          />
-        </div>
-        <button type="submit" style={styles.button} disabled={loading}>
-          {loading ? "Verifying..." : "Verify on Blockchain"}
-        </button>
-      </form>
+    <div>
+      <div className="page-header">
+        <h1>Verify Attendance</h1>
+        <p>Check if an attendance record exists on the blockchain</p>
+      </div>
 
-      {result && (
-        <div style={result.onChain.exists ? styles.verified : styles.notFound}>
-          <h3>{result.onChain.exists ? "Attendance Verified" : "Not Found on Blockchain"}</h3>
-          {result.onChain.exists && (
-            <>
-              <p><strong>Wallet:</strong> {result.onChain.student}</p>
-              <p><strong>Timestamp:</strong> {new Date(result.onChain.timestamp * 1000).toLocaleString()}</p>
-            </>
-          )}
-          {result.offChain && (
-            <>
-              <p><strong>Student ID:</strong> {result.offChain.studentId}</p>
-              <p><strong>Course:</strong> {result.offChain.courseId}</p>
-              <p><strong>Date:</strong> {result.offChain.date}</p>
-              <p><strong>Tx Hash:</strong> {result.offChain.txHash}</p>
-            </>
-          )}
-        </div>
-      )}
+      <div className="form-card">
+        <form onSubmit={handleVerify}>
+          <div className="form-group">
+            <label className="form-label">Attendance Hash</label>
+            <input
+              type="text"
+              className="form-input mono"
+              value={hash}
+              onChange={(e) => setHash(e.target.value)}
+              placeholder="0x..."
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Verifying..." : "Verify on Blockchain"}
+          </button>
+        </form>
 
-      {error && <div style={styles.notFound}><p>{error}</p></div>}
+        {result && (
+          <div className={`result-card ${result.onChain.exists ? "success" : "error"}`}>
+            <h3>
+              {result.onChain.exists ? "\u2713 Attendance Verified" : "\u2717 Not Found on Blockchain"}
+            </h3>
+            {result.onChain.exists && (
+              <>
+                <div className="result-row">
+                  <span className="label">Wallet Address</span>
+                  <span className="value">{result.onChain.student}</span>
+                </div>
+                <div className="result-row">
+                  <span className="label">Block Timestamp</span>
+                  <span className="value">
+                    {new Date(result.onChain.timestamp * 1000).toLocaleString()}
+                  </span>
+                </div>
+              </>
+            )}
+            {result.offChain && (
+              <>
+                <div className="result-row">
+                  <span className="label">Student ID</span>
+                  <span className="value">{result.offChain.studentId}</span>
+                </div>
+                <div className="result-row">
+                  <span className="label">Course</span>
+                  <span className="value">{result.offChain.courseId}</span>
+                </div>
+                <div className="result-row">
+                  <span className="label">Date</span>
+                  <span className="value">{result.offChain.date}</span>
+                </div>
+                <div className="result-row">
+                  <span className="label">Transaction Hash</span>
+                  <span className="value">{result.offChain.txHash}</span>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {error && (
+          <div className="result-card error">
+            <h3>&#10007; Error</h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>{error}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-const styles = {
-  container: { padding: "30px", maxWidth: "600px", margin: "0 auto" },
-  form: { display: "flex", flexDirection: "column", gap: "15px" },
-  field: { display: "flex", flexDirection: "column", gap: "5px" },
-  input: {
-    padding: "10px",
-    fontSize: "16px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    padding: "12px",
-    fontSize: "16px",
-    backgroundColor: "#1a1a2e",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    marginTop: "10px",
-  },
-  verified: {
-    marginTop: "20px",
-    padding: "15px",
-    backgroundColor: "#d4edda",
-    borderRadius: "8px",
-    wordBreak: "break-all",
-  },
-  notFound: {
-    marginTop: "20px",
-    padding: "15px",
-    backgroundColor: "#f8d7da",
-    borderRadius: "8px",
-  },
 };
 
 export default Verify;

@@ -25,93 +25,78 @@ const CheckIn = ({ walletAddress }) => {
   };
 
   return (
-    <div style={styles.container}>
-      <h1>Check In</h1>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <div style={styles.field}>
-          <label>Student ID</label>
-          <input
-            type="text"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            placeholder="e.g. 2414204"
-            style={styles.input}
-            required
-          />
-        </div>
-        <div style={styles.field}>
-          <label>Course ID</label>
-          <input
-            type="text"
-            value={courseId}
-            onChange={(e) => setCourseId(e.target.value)}
-            placeholder="e.g. CN6035"
-            style={styles.input}
-            required
-          />
-        </div>
-        <div style={styles.field}>
-          <label>Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            style={styles.input}
-            required
-          />
-        </div>
-        <button type="submit" style={styles.button} disabled={loading}>
-          {loading ? "Recording on Blockchain..." : "Record Attendance"}
-        </button>
-      </form>
+    <div>
+      <div className="page-header">
+        <h1>Check In</h1>
+        <p>Record student attendance on the blockchain</p>
+      </div>
 
-      {result && (
-        <div style={styles.success}>
-          <h3>Attendance Recorded Successfully</h3>
-          <p><strong>Hash:</strong> {result.attendanceHash}</p>
-          <p><strong>Tx Hash:</strong> {result.txHash}</p>
-          <p><strong>Block:</strong> {result.blockNumber}</p>
-        </div>
-      )}
+      <div className="form-card">
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Student ID</label>
+            <input
+              type="text"
+              className="form-input"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              placeholder="e.g. 2414204"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Course ID</label>
+            <input
+              type="text"
+              className="form-input"
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+              placeholder="e.g. CN6035"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Date</label>
+            <input
+              type="date"
+              className="form-input"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Recording on Blockchain..." : "Record Attendance"}
+          </button>
+        </form>
 
-      {error && <div style={styles.error}><p>{error}</p></div>}
+        {result && (
+          <div className="result-card success">
+            <h3>&#10003; Attendance Recorded Successfully</h3>
+            <div className="result-row">
+              <span className="label">Attendance Hash</span>
+              <span className="value">{result.attendanceHash}</span>
+            </div>
+            <div className="result-row">
+              <span className="label">Transaction Hash</span>
+              <span className="value">{result.txHash}</span>
+            </div>
+            <div className="result-row">
+              <span className="label">Block Number</span>
+              <span className="value">{result.blockNumber}</span>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="result-card error">
+            <h3>&#10007; Error</h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>{error}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-const styles = {
-  container: { padding: "30px", maxWidth: "600px", margin: "0 auto" },
-  form: { display: "flex", flexDirection: "column", gap: "15px" },
-  field: { display: "flex", flexDirection: "column", gap: "5px" },
-  input: {
-    padding: "10px",
-    fontSize: "16px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    padding: "12px",
-    fontSize: "16px",
-    backgroundColor: "#1a1a2e",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    marginTop: "10px",
-  },
-  success: {
-    marginTop: "20px",
-    padding: "15px",
-    backgroundColor: "#d4edda",
-    borderRadius: "8px",
-    wordBreak: "break-all",
-  },
-  error: {
-    marginTop: "20px",
-    padding: "15px",
-    backgroundColor: "#f8d7da",
-    borderRadius: "8px",
-  },
 };
 
 export default CheckIn;
