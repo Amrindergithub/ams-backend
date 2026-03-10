@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { login, register, registerAdmin, registerStudent } from "../utils/api";
+import { ethers } from "ethers";
+import { login, register, registerAdmin, registerStudent, walletLogin } from "../utils/api";
 import { COURSES, ROLES } from "../utils/constants";
 
 const Login = ({ onLogin }) => {
@@ -24,8 +25,73 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [walletConnecting, setWalletConnecting] = useState(false);
 
   const courses = COURSES;
+
+  const connectMetaMask = async () => {
+    if (!window.ethereum) {
+      setError("MetaMask is not installed. Please install the MetaMask extension.");
+      return;
+    }
+    setWalletConnecting(true);
+    setError(null);
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      setWalletAddress(accounts[0]);
+    } catch (err) {
+      setError("Failed to connect MetaMask. Please try again.");
+    }
+    setWalletConnecting(false);
+  };
+
+  const handleMetaMaskLogin = async () => {
+    if (!window.ethereum) {
+      setError("MetaMask is not installed. Please install the MetaMask extension.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      const address = accounts[0];
+      const signer = provider.getSigner();
+      const message = `AMS DApp Login: ${address}`;
+      const signature = await signer.signMessage(message);
+
+      const res = await walletLogin(address, signature, message);
+      const token = res.data?.accessToken;
+      if (token) localStorage.setItem("accessToken", token);
+      localStorage.setItem("userEmail", res.data?.email || address);
+      localStorage.setItem("userName", res.data?.email?.split("@")[0] || address.slice(0, 8));
+      localStorage.setItem("walletAddress", address);
+
+      const backendRole = res.data?.role;
+      const effectiveRole =
+        backendRole === ROLES.SUPER_ADMIN || backendRole === ROLES.ADMIN
+          ? "admin"
+          : "student";
+      localStorage.setItem("userRole", effectiveRole);
+      localStorage.setItem("userBackendRole", backendRole || "");
+      localStorage.setItem("userModules", JSON.stringify(res.data?.modules || []));
+      if (effectiveRole === "student")
+        localStorage.setItem("studentId", res.data?.email || address);
+
+      onLogin({
+        email: res.data?.email || address,
+        name: res.data?.email?.split("@")[0] || address.slice(0, 8),
+        role: effectiveRole,
+      });
+      navigate(effectiveRole === "admin" ? "/admin" : "/student");
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "MetaMask login failed. Make sure your wallet is registered."
+      );
+    }
+    setLoading(false);
+  };
 
   const toggleModule = (courseId) => {
     setSelectedModules((prev) =>
@@ -93,7 +159,7 @@ const Login = ({ onLogin }) => {
     // Don't block on an empty module list here — the backend decides what's
     // required based on which admin key was used (super_admin can skip it).
     try {
-      await registerAdmin(name, email, password, adminKey, selectedModules);
+      await registerAdmin(name, email, password, adminKey, selectedModules, walletAddress);
       setSuccess("Admin account created. You can now sign in.");
       setMode("login");
       setSelectedModules([]);
@@ -110,7 +176,7 @@ const Login = ({ onLogin }) => {
     setSuccess(null);
     try {
       try {
-        await register(name, email, password);
+        await register(name, email, password, walletAddress);
       } catch (err) {
         if (!err.response?.data?.message?.includes("already")) throw err;
       }
@@ -220,6 +286,33 @@ const Login = ({ onLogin }) => {
                 <button type="submit" className={`btn ${isAdminRoute ? "btn-primary" : "btn-student"}`} disabled={loading}>
                   {loading ? "Signing in..." : "Sign In"}
                 </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "16px 0" }}>
+                  <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+                  <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>OR</span>
+                  <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleMetaMaskLogin}
+                  disabled={loading}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    background: "linear-gradient(135deg, #f6851b, #e2761b)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                >
+                  {loading ? "Connecting..." : "Login with MetaMask"}
+                </button>
               </form>
             )}
 
@@ -273,6 +366,39 @@ const Login = ({ onLogin }) => {
                     ))}
                   </div>
                 </div>
+                <div className="form-group">
+                  <label className="form-label">MetaMask Wallet (Optional)</label>
+                  {walletAddress ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--success)", borderRadius: "8px" }}>
+                      <span style={{ color: "var(--success)", fontSize: "16px" }}>{"\u2713"}</span>
+                      <span className="mono" style={{ fontSize: "12px", wordBreak: "break-all", flex: 1 }}>{walletAddress}</span>
+                      <button type="button" onClick={() => setWalletAddress("")} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "12px" }}>Change</button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={connectMetaMask}
+                      disabled={walletConnecting}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        background: "linear-gradient(135deg, #f6851b, #e2761b)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      {walletConnecting ? "Connecting..." : "Connect MetaMask"}
+                    </button>
+                  )}
+                </div>
                 <button type="submit" className="btn btn-primary" disabled={loading}>
                   {loading ? "Creating..." : "Create Admin Account"}
                 </button>
@@ -304,8 +430,37 @@ const Login = ({ onLogin }) => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Wallet Address (Optional)</label>
-                  <input type="text" className="form-input mono" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} placeholder="0x..." />
+                  <label className="form-label">MetaMask Wallet</label>
+                  {walletAddress ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", background: "var(--bg-input)", border: "1px solid var(--success)", borderRadius: "8px" }}>
+                      <span style={{ color: "var(--success)", fontSize: "16px" }}>{"\u2713"}</span>
+                      <span className="mono" style={{ fontSize: "12px", wordBreak: "break-all", flex: 1 }}>{walletAddress}</span>
+                      <button type="button" onClick={() => setWalletAddress("")} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "12px" }}>Change</button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={connectMetaMask}
+                      disabled={walletConnecting}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        background: "linear-gradient(135deg, #f6851b, #e2761b)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      {walletConnecting ? "Connecting..." : "Connect MetaMask"}
+                    </button>
+                  )}
                 </div>
                 <button type="submit" className="btn btn-student" disabled={loading}>
                   {loading ? "Registering..." : "Register as Student"}

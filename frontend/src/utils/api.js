@@ -15,25 +15,30 @@ API.interceptors.request.use((config) => {
 });
 
 // Auth
-export const register = (name, email, password) => {
-  return API.post("/auth/register", { name, email, password });
+export const register = (name, email, password, walletAddress) => {
+  return API.post("/auth/register", { name, email, password, walletAddress: walletAddress || null });
 };
 
 // Admin registration — the backend validates adminKey server-side and
 // assigns role (admin or super_admin) based on which secret it matches.
 // `modules` should be an array of course ids e.g. ["CN6035", "CN6003"].
-export const registerAdmin = (name, email, password, adminKey, modules) => {
+export const registerAdmin = (name, email, password, adminKey, modules, walletAddress) => {
   return API.post("/auth/register-admin", {
     name,
     email,
     password,
     adminKey,
     modules,
+    walletAddress: walletAddress || null,
   });
 };
 
 export const login = (email, password) => {
   return API.post("/auth/login", { email, password });
+};
+
+export const walletLogin = (walletAddress, signature, message) => {
+  return API.post("/auth/login/wallet", { walletAddress, signature, message });
 };
 
 // Blockchain attendance
