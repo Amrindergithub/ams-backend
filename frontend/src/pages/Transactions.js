@@ -36,6 +36,18 @@ const Transactions = () => {
     );
   }
 
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const hashCellStyle = {
+    maxWidth: "220px",
+    wordBreak: "break-all",
+    fontSize: "11px",
+    lineHeight: "1.4",
+    cursor: "pointer",
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -43,7 +55,7 @@ const Transactions = () => {
         <p>All blockchain transactions from the smart contract</p>
       </div>
 
-      <div className="data-table-wrapper">
+      <div className="data-table-wrapper" style={{ overflowX: "auto" }}>
         <div className="data-table-header">
           <h2>Transactions ({filtered.length})</h2>
           <input
@@ -62,7 +74,7 @@ const Transactions = () => {
             <p>No transactions found.</p>
           </div>
         ) : (
-          <table className="data-table">
+          <table className="data-table" style={{ minWidth: "900px" }}>
             <thead>
               <tr>
                 <th>#</th>
@@ -82,12 +94,22 @@ const Transactions = () => {
                   <td><strong>{r.studentId}</strong></td>
                   <td>{r.courseId}</td>
                   <td>{r.date}</td>
-                  <td className="mono">{r.blockNumber || "—"}</td>
-                  <td className="mono" title={r.txHash}>
-                    {r.txHash ? `${r.txHash.slice(0, 18)}...` : "N/A"}
+                  <td className="mono">{r.blockNumber || "\u2014"}</td>
+                  <td
+                    className="mono"
+                    style={hashCellStyle}
+                    title="Click to copy"
+                    onClick={() => r.txHash && copyToClipboard(r.txHash)}
+                  >
+                    {r.txHash || "N/A"}
                   </td>
-                  <td className="mono" title={r.attendanceHash}>
-                    {r.attendanceHash ? `${r.attendanceHash.slice(0, 18)}...` : "N/A"}
+                  <td
+                    className="mono"
+                    style={hashCellStyle}
+                    title="Click to copy"
+                    onClick={() => r.attendanceHash && copyToClipboard(r.attendanceHash)}
+                  >
+                    {r.attendanceHash || "N/A"}
                   </td>
                   <td>
                     <span className={`badge ${r.verified ? "badge-success" : "badge-pending"}`}>
