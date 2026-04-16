@@ -318,6 +318,9 @@ module.exports.checkAdminAccess = async (req, res, next) => {
       _id: 1,
       role: 1,
       status: 1,
+      // needed for per-lecturer session/attendance scoping
+      modules: 1,
+      email: 1,
     }
   );
   // if user details not found or role is not admin

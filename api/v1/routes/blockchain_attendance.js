@@ -2,8 +2,17 @@ const router = require("express").Router();
 const { internalServerError } = require("../utils/response");
 const BlockchainAttendance = require("../models/blockchain_attendance");
 const blockchain = require("../services/blockchain");
+const AuthMiddlewares = require("../middlewares/auth");
+const { buildModuleFilter, isModuleInScope } = require("../utils/module_scope");
 
-// POST - Record attendance on-chain
+// Admin-only middleware chain. Reused by every admin endpoint in this router.
+const adminOnly = [
+  AuthMiddlewares.checkAccessToken,
+  AuthMiddlewares.validateAccessToken,
+  AuthMiddlewares.checkAdminAccess,
+];
+
+// POST - Record attendance on-chain (public — used by student manual check-in)
 router.post("/check-in", async (req, res) => {
   try {
     const { studentId, courseId, date, walletAddress } = req.body;
@@ -74,10 +83,12 @@ router.get("/verify/:hash", async (req, res) => {
   }
 });
 
-// GET - All blockchain attendance records
-router.get("/records", async (req, res) => {
+// GET - All blockchain attendance records (admin, scoped by module)
+router.get("/records", adminOnly, async (req, res) => {
   try {
-    const records = await BlockchainAttendance.find().sort({ createdAt: -1 });
+    const records = await BlockchainAttendance.find(
+      buildModuleFilter(req.authUser)
+    ).sort({ createdAt: -1 });
     const onChainCount = await blockchain.getRecordCount();
 
     return res.status(200).json({
@@ -93,18 +104,25 @@ router.get("/records", async (req, res) => {
   }
 });
 
-// DELETE - Remove a record from MongoDB (on-chain record remains immutable)
-router.delete("/records/:id", async (req, res) => {
+// DELETE - Remove a record from MongoDB (on-chain record remains immutable).
+// 403 if the record's module is not in the caller's scope.
+router.delete("/records/:id", adminOnly, async (req, res) => {
   try {
     const { id } = req.params;
-    const record = await BlockchainAttendance.findByIdAndDelete(id);
-
-    if (!record) {
+    const existing = await BlockchainAttendance.findById(id);
+    if (!existing) {
       return res.status(404).json({
         status: "failed",
         message: "Record not found",
       });
     }
+    if (!isModuleInScope(req.authUser, existing.courseId)) {
+      return res.status(403).json({
+        status: "failed",
+        message: "This record belongs to a module you do not own",
+      });
+    }
+    await BlockchainAttendance.findByIdAndDelete(id);
 
     return res.status(200).json({
       status: "success",
@@ -116,10 +134,12 @@ router.delete("/records/:id", async (req, res) => {
   }
 });
 
-// GET - Export records as CSV
-router.get("/export/csv", async (req, res) => {
+// GET - Export records as CSV (admin, scoped by module)
+router.get("/export/csv", adminOnly, async (req, res) => {
   try {
-    const records = await BlockchainAttendance.find().sort({ createdAt: -1 });
+    const records = await BlockchainAttendance.find(
+      buildModuleFilter(req.authUser)
+    ).sort({ createdAt: -1 });
 
     const header = "Student ID,Course,Date,Attendance Hash,Tx Hash,Block,Verified,Created At\n";
     const rows = records.map((r) =>

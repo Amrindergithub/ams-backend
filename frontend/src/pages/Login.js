@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { login, register, registerStudent } from "../utils/api";
-
-const ADMIN_KEY = "UEL-AMS-2026";
+import { login, register, registerAdmin, registerStudent } from "../utils/api";
+import { COURSES, ROLES } from "../utils/constants";
 
 const Login = ({ onLogin }) => {
   const location = useLocation();
@@ -19,17 +18,22 @@ const Login = ({ onLogin }) => {
   const [course, setCourse] = useState("CN6035");
   const [walletAddress, setWalletAddress] = useState("");
   const [adminKey, setAdminKey] = useState("");
+  // Modules the registering admin will own. Unused for super_admin — the
+  // backend ignores the array when SUPER_ADMIN_KEY is used.
+  const [selectedModules, setSelectedModules] = useState([]);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const courses = [
-    { id: "CN6000", name: "Mental Wealth: Professional Life 3" },
-    { id: "CN6003", name: "Computer and Network Security" },
-    { id: "CN6005", name: "Artificial Intelligence" },
-    { id: "CN6008", name: "Advanced Topics in Computer Science" },
-    { id: "CN6035", name: "Mobile and Distributed Systems" },
-  ];
+  const courses = COURSES;
+
+  const toggleModule = (courseId) => {
+    setSelectedModules((prev) =>
+      prev.includes(courseId)
+        ? prev.filter((c) => c !== courseId)
+        : [...prev, courseId]
+    );
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,16 +41,45 @@ const Login = ({ onLogin }) => {
     setError(null);
     try {
       const res = await login(email, password);
-      const token = res.data.data?.accessToken || res.data.data?.token;
+      // Backend returns accessToken/role/modules on the response body for
+      // admin logins; the original student flow puts the token under `data`.
+      // Support both shapes.
+      const token =
+        res.data?.accessToken ||
+        res.data?.data?.accessToken ||
+        res.data?.data?.token;
       if (token) localStorage.setItem("accessToken", token);
       localStorage.setItem("userEmail", email);
       localStorage.setItem("userName", name || email.split("@")[0]);
-      localStorage.setItem("userRole", role);
-      if (role === "student") localStorage.setItem("studentId", studentId || email);
-      onLogin({ email, name: name || email.split("@")[0], role });
-      navigate(role === "admin" ? "/admin" : "/student");
+
+      // Prefer the backend's authoritative role if it comes through (admins
+      // may have registered as super_admin). Fall back to the route-based
+      // role for students.
+      const backendRole = res.data?.role;
+      const effectiveRole =
+        backendRole === ROLES.SUPER_ADMIN || backendRole === ROLES.ADMIN
+          ? "admin"
+          : role;
+      localStorage.setItem("userRole", effectiveRole);
+      // Stash the raw backend role + modules for scope-aware UI.
+      localStorage.setItem("userBackendRole", backendRole || "");
+      localStorage.setItem(
+        "userModules",
+        JSON.stringify(res.data?.modules || [])
+      );
+
+      if (role === "student")
+        localStorage.setItem("studentId", studentId || email);
+      onLogin({
+        email,
+        name: name || email.split("@")[0],
+        role: effectiveRole,
+      });
+      navigate(effectiveRole === "admin" ? "/admin" : "/student");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Check your credentials.");
+      setError(
+        err.response?.data?.message || "Login failed. Check your credentials."
+      );
     }
     setLoading(false);
   };
@@ -57,16 +90,13 @@ const Login = ({ onLogin }) => {
     setError(null);
     setSuccess(null);
 
-    if (adminKey !== ADMIN_KEY) {
-      setError("Invalid admin registration key. Contact your department head.");
-      setLoading(false);
-      return;
-    }
-
+    // Don't block on an empty module list here — the backend decides what's
+    // required based on which admin key was used (super_admin can skip it).
     try {
-      await register(name, email, password);
+      await registerAdmin(name, email, password, adminKey, selectedModules);
       setSuccess("Admin account created. You can now sign in.");
       setMode("login");
+      setSelectedModules([]);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     }
@@ -210,6 +240,38 @@ const Login = ({ onLogin }) => {
                 <div className="form-group">
                   <label className="form-label">Admin Registration Key</label>
                   <input type="password" className="form-input" value={adminKey} onChange={(e) => setAdminKey(e.target.value)} placeholder="Enter key provided by department" required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Modules You Teach</label>
+                  <p style={{ color: "var(--text-muted)", fontSize: "12px", margin: "0 0 8px 0" }}>
+                    Pick every module you need to manage. Super-admins can leave this blank.
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {courses.map((c) => (
+                      <label
+                        key={c.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "8px 12px",
+                          background: "var(--bg-input)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontSize: "13px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedModules.includes(c.id)}
+                          onChange={() => toggleModule(c.id)}
+                        />
+                        <strong>{c.id}</strong>
+                        <span style={{ color: "var(--text-secondary)" }}>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={loading}>
                   {loading ? "Creating..." : "Create Admin Account"}

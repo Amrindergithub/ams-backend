@@ -28,6 +28,13 @@ const authSchema = new mongoose.Schema(
       default: account.accountStatus.emailVerificationPending,
       enum: account.accountStatusList,
     },
+    // Module codes (e.g. ["CN6035", "CN6003"]) this admin lecturer owns.
+    // Used for per-lecturer scoping of sessions and attendance records.
+    // Empty for students and super_admins.
+    modules: {
+      type: [String],
+      default: [],
+    },
     /*
     replaced by role and status
     ---------------------------

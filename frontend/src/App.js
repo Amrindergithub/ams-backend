@@ -59,6 +59,8 @@ function App() {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userName");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("userBackendRole");
+    localStorage.removeItem("userModules");
     localStorage.removeItem("studentId");
     setUser(null);
   };

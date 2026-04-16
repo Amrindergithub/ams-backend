@@ -25,6 +25,24 @@ router.post(
   }
 );
 
+/* admin registration route
+    - validates the admin key server-side against ADMIN_KEY / SUPER_ADMIN_KEY
+    - requires a modules array for regular admins (empty allowed for super_admin)
+    - see controllers/auth.js :: registerAsAdmin
+*/
+router.post(
+  "/register-admin",
+  AuthMiddlewares.validateRegisterFields,
+  AuthMiddlewares.validPassword,
+  async (req, res) => {
+    try {
+      await AuthControllers.registerAsAdmin(req, res);
+    } catch (error) {
+      internalServerError(res, error);
+    }
+  }
+);
+
 // TODO: if you want custom roles, add your custom register route and pass the role of that user
 //
 // Example: Register for role of DBA

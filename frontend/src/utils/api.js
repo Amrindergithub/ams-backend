@@ -7,7 +7,9 @@ const API = axios.create({
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
-    config.headers["x-access-token"] = token;
+    // Backend middleware (api/v1/middlewares/auth.js :: checkAccessToken)
+    // reads the standard Authorization: Bearer header.
+    config.headers["Authorization"] = `Bearer ${token}`;
   }
   return config;
 });
@@ -15,6 +17,19 @@ API.interceptors.request.use((config) => {
 // Auth
 export const register = (name, email, password) => {
   return API.post("/auth/register", { name, email, password });
+};
+
+// Admin registration — the backend validates adminKey server-side and
+// assigns role (admin or super_admin) based on which secret it matches.
+// `modules` should be an array of course ids e.g. ["CN6035", "CN6003"].
+export const registerAdmin = (name, email, password, adminKey, modules) => {
+  return API.post("/auth/register-admin", {
+    name,
+    email,
+    password,
+    adminKey,
+    modules,
+  });
 };
 
 export const login = (email, password) => {

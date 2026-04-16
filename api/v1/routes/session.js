@@ -5,9 +5,20 @@ const StudentProfile = require("../models/student_profile");
 const BlockchainAttendance = require("../models/blockchain_attendance");
 const blockchain = require("../services/blockchain");
 const crypto = require("crypto");
+const AuthMiddlewares = require("../middlewares/auth");
+const { buildModuleFilter, isModuleInScope } = require("../utils/module_scope");
+
+// Middleware chain that guarantees req.authUser exists and the caller is an
+// admin / super_admin with adminApproved status. Reused by every admin-only
+// endpoint in this router.
+const adminOnly = [
+  AuthMiddlewares.checkAccessToken,
+  AuthMiddlewares.validateAccessToken,
+  AuthMiddlewares.checkAdminAccess,
+];
 
 // POST - Admin creates a new session
-router.post("/create", async (req, res) => {
+router.post("/create", adminOnly, async (req, res) => {
   try {
     const { courseId, courseName, date, startTime, endTime } = req.body;
 
@@ -15,6 +26,15 @@ router.post("/create", async (req, res) => {
       return res.status(400).json({
         status: "failed",
         message: "courseId, courseName, date, startTime, and endTime are required",
+      });
+    }
+
+    // A regular admin can only create sessions for modules they own.
+    // super_admin is allowed to create sessions for any module.
+    if (!isModuleInScope(req.authUser, courseId)) {
+      return res.status(403).json({
+        status: "failed",
+        message: `You are not assigned to module ${courseId}`,
       });
     }
 
@@ -30,7 +50,9 @@ router.post("/create", async (req, res) => {
       date,
       startTime,
       endTime,
-      createdBy: req.body.adminEmail || "admin",
+      // createdBy is the authenticated admin's email, not something the
+      // client can spoof via the request body.
+      createdBy: req.authUser.email,
       qrToken,
       qrExpiresAt: expiryDate,
     });
@@ -227,10 +249,13 @@ router.post("/check-out", async (req, res) => {
   }
 });
 
-// GET - Get all sessions (admin)
-router.get("/all", async (req, res) => {
+// GET - Get all sessions (admin) — scoped to the lecturer's own modules.
+// super_admin sees every session in the system.
+router.get("/all", adminOnly, async (req, res) => {
   try {
-    const sessions = await Session.find().sort({ createdAt: -1 });
+    const sessions = await Session.find(buildModuleFilter(req.authUser)).sort({
+      createdAt: -1,
+    });
     return res.status(200).json({
       status: "success",
       data: { sessions },
@@ -240,14 +265,21 @@ router.get("/all", async (req, res) => {
   }
 });
 
-// GET - Get session by ID
-router.get("/:id", async (req, res) => {
+// GET - Get session by ID (admin) — 403 if the session's module is not
+// in the caller's scope.
+router.get("/:id", adminOnly, async (req, res) => {
   try {
     const session = await Session.findById(req.params.id);
     if (!session) {
       return res.status(404).json({
         status: "failed",
         message: "Session not found",
+      });
+    }
+    if (!isModuleInScope(req.authUser, session.courseId)) {
+      return res.status(403).json({
+        status: "failed",
+        message: "This session belongs to a module you do not own",
       });
     }
     return res.status(200).json({
@@ -289,14 +321,21 @@ router.get("/qr/:token", async (req, res) => {
   }
 });
 
-// PATCH - End session (admin)
-router.patch("/end/:id", async (req, res) => {
+// PATCH - End session (admin) — 403 if the caller doesn't own the module.
+router.patch("/end/:id", adminOnly, async (req, res) => {
   try {
     const session = await Session.findById(req.params.id);
     if (!session) {
       return res.status(404).json({
         status: "failed",
         message: "Session not found",
+      });
+    }
+
+    if (!isModuleInScope(req.authUser, session.courseId)) {
+      return res.status(403).json({
+        status: "failed",
+        message: "This session belongs to a module you do not own",
       });
     }
 

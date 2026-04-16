@@ -1,30 +1,42 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { createSession, getAllSessions, endSession } from "../utils/api";
+import { COURSES, ROLES } from "../utils/constants";
 
 const Sessions = () => {
+  // Restrict the create-session dropdown to this admin's own modules.
+  // super_admin (or the legacy case where modules are missing) sees every
+  // module in the catalogue.
+  const courses = useMemo(() => {
+    const backendRole = localStorage.getItem("userBackendRole");
+    let userModules = [];
+    try {
+      userModules = JSON.parse(localStorage.getItem("userModules") || "[]");
+    } catch (e) {
+      userModules = [];
+    }
+    if (backendRole === ROLES.SUPER_ADMIN || userModules.length === 0) {
+      return COURSES;
+    }
+    return COURSES.filter((c) => userModules.includes(c.id));
+  }, []);
+
+  // Default the form to the first module the admin is allowed to pick.
+  const defaultCourse = courses[0] || COURSES[0];
+
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [activeQR, setActiveQR] = useState(null);
   const [form, setForm] = useState({
-    courseId: "CN6035",
-    courseName: "Mobile and Distributed Systems",
+    courseId: defaultCourse.id,
+    courseName: defaultCourse.name,
     date: new Date().toISOString().split("T")[0],
     startTime: "09:00",
     endTime: "11:00",
-    adminEmail: localStorage.getItem("userEmail") || "admin",
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const courses = [
-    { id: "CN6000", name: "Mental Wealth: Professional Life 3" },
-    { id: "CN6003", name: "Computer and Network Security" },
-    { id: "CN6005", name: "Artificial Intelligence" },
-    { id: "CN6008", name: "Advanced Topics in Computer Science" },
-    { id: "CN6035", name: "Mobile and Distributed Systems" },
-  ];
 
   useEffect(() => {
     fetchSessions();

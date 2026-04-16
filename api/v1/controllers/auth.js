@@ -75,43 +75,75 @@ module.exports.registerWithEmail = async (req, res, registerRole) => {
   });
 };
 
+/* Admin registration with module assignment
+    - validate server-side admin key against ADMIN_KEY / SUPER_ADMIN_KEY envs
+    - ADMIN_KEY grants role "admin" and requires a non-empty modules array
+    - SUPER_ADMIN_KEY grants role "super_admin" (sees everything, modules ignored)
+    - sets status directly to adminApproved so the user can log in immediately
+*/
 module.exports.registerAsAdmin = async (req, res) => {
+  const { name, email, password, adminKey, modules } = req.body;
+
+  // resolve which role this adminKey grants
+  let grantedRole;
+  if (adminKey && adminKey === process.env.SUPER_ADMIN_KEY) {
+    grantedRole = AccountConstants.accRoles.superAdmin;
+  } else if (adminKey && adminKey === process.env.ADMIN_KEY) {
+    grantedRole = AccountConstants.accRoles.admin;
+  } else {
+    return res.status(403).json({
+      status: Errors.FAILED,
+      message: "Invalid admin registration key",
+    });
+  }
+
+  // regular admins must declare at least one module
+  const modulesArray = Array.isArray(modules) ? modules : [];
+  if (
+    grantedRole === AccountConstants.accRoles.admin &&
+    modulesArray.length === 0
+  ) {
+    return res.status(400).json({
+      status: Errors.FAILED,
+      message: "At least one module must be selected",
+    });
+  }
+
   // check if user exists
-  var authUser = await getAuthUserByEmail(req.body.email);
+  var authUser = await getAuthUserByEmail(email);
 
   if (authUser)
     return res
       .status(409)
       .json({ status: Errors.FAILED, message: Errors.EMAIL_IN_USE });
 
-  const hashedPassword = await hashThePassword(req.body.password);
+  const hashedPassword = await hashThePassword(password);
 
   // create user form data
   const newAuthUser = new Auth({
-    email: req.body.email,
+    email: email,
     password: hashedPassword,
-    role: AccountConstants.accRoles.admin,
+    role: grantedRole,
     provider: Headers.EMAIL_KEY,
-    status: AccountConstants.accountStatus.active,
+    // bypass email verification + admin approval workflow so the account
+    // can log in straight away (SendGrid is disabled in this project)
+    status: AccountConstants.accountStatus.adminApproved,
+    modules: modulesArray,
   });
 
   // creating user in database
   await newAuthUser.save(async (error, savedUser) => {
     if (savedUser) {
-      savedUser.firstName = req.body.name.toString().split(" ")[0];
-      savedUser.lastName = req.body.name.toString().split(" ")[1];
-      await TokenControllers.sendVerificationMail(
-        savedUser._id,
-        savedUser.email,
-        savedUser.firstName + " " + savedUser.lastName
-      );
+      savedUser.firstName = name.toString().split(" ")[0];
+      savedUser.lastName = name.toString().split(" ")[1] || "";
       await _createUserDocument(savedUser);
       return res.status(201).json({
         status: Success.SUCCESS,
-        message: Success.VERIFY_MAIL_SENT,
+        message: "Admin account created",
+        role: grantedRole,
+        modules: modulesArray,
       });
     }
-    // Print the error and sent back failed response
     console.log(error);
     return res.status(403).json({
       status: Errors.FAILED,
@@ -966,6 +998,12 @@ async function loginUser(authUser, provider, res) {
         .json({
           status: Success.SUCCESS,
           message: Success.LOGIN_SUCCESS,
+          // expose role + modules so the frontend can scope the admin UI
+          // to the lecturer's own modules (or unlock all for super_admin)
+          accessToken: accessToken,
+          role: savedUser.role,
+          modules: savedUser.modules || [],
+          email: savedUser.email,
         });
     }
     // Print the error and sent back failed response

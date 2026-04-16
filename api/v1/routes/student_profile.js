@@ -3,8 +3,17 @@ const { internalServerError } = require("../utils/response");
 const StudentProfile = require("../models/student_profile");
 const BlockchainAttendance = require("../models/blockchain_attendance");
 const Session = require("../models/session");
+const AuthMiddlewares = require("../middlewares/auth");
+const { buildModuleFilter } = require("../utils/module_scope");
 
 const LOW_ATTENDANCE_THRESHOLD = 75;
+
+// Admin-only middleware chain.
+const adminOnly = [
+  AuthMiddlewares.checkAccessToken,
+  AuthMiddlewares.validateAccessToken,
+  AuthMiddlewares.checkAdminAccess,
+];
 
 // POST - Register student profile
 router.post("/register", async (req, res) => {
@@ -127,24 +136,39 @@ router.get("/profile/:studentId", async (req, res) => {
   }
 });
 
-// GET - All students (admin)
-router.get("/all", async (req, res) => {
+// GET - All students (admin) — attendance rate is computed relative to the
+// caller's module scope, so two different lecturers see different rates for
+// the same student. Rates are returned inline and NOT persisted, because
+// each admin has a different view.
+router.get("/all", adminOnly, async (req, res) => {
   try {
-    const students = await StudentProfile.find().sort({ registeredAt: -1 });
+    const students = await StudentProfile.find()
+      .sort({ registeredAt: -1 })
+      .lean();
 
-    const totalSessions = await Session.countDocuments({ isActive: false });
+    // Sessions in the caller's module scope that have already ended — these
+    // are the denominator for attendance rate calculations.
+    const moduleFilter = buildModuleFilter(req.authUser);
+    const totalSessions = await Session.countDocuments({
+      ...moduleFilter,
+      isActive: false,
+    });
 
     for (let student of students) {
       const attended = await Session.countDocuments({
+        ...moduleFilter,
         "checkIns.studentId": student.studentId,
       });
-      const rate = totalSessions > 0 ? Math.round((attended / totalSessions) * 100) : 100;
+      const rate =
+        totalSessions > 0
+          ? Math.round((attended / totalSessions) * 100)
+          : 100;
       student.attendanceRate = rate;
       student.flagged = rate < LOW_ATTENDANCE_THRESHOLD;
-      student.flagReason = rate < LOW_ATTENDANCE_THRESHOLD
-        ? `Attendance ${rate}% below ${LOW_ATTENDANCE_THRESHOLD}%`
-        : null;
-      await student.save();
+      student.flagReason =
+        rate < LOW_ATTENDANCE_THRESHOLD
+          ? `Attendance ${rate}% below ${LOW_ATTENDANCE_THRESHOLD}%`
+          : null;
     }
 
     const flaggedCount = students.filter((s) => s.flagged).length;
@@ -163,13 +187,38 @@ router.get("/all", async (req, res) => {
   }
 });
 
-// GET - Flagged students only
-router.get("/flagged", async (req, res) => {
+// GET - Flagged students only (admin) — recomputes per-request against the
+// caller's module scope rather than relying on stored flag state.
+router.get("/flagged", adminOnly, async (req, res) => {
   try {
-    const students = await StudentProfile.find({ flagged: true });
+    const allStudents = await StudentProfile.find().lean();
+    const moduleFilter = buildModuleFilter(req.authUser);
+    const totalSessions = await Session.countDocuments({
+      ...moduleFilter,
+      isActive: false,
+    });
+
+    const flagged = [];
+    for (let student of allStudents) {
+      const attended = await Session.countDocuments({
+        ...moduleFilter,
+        "checkIns.studentId": student.studentId,
+      });
+      const rate =
+        totalSessions > 0
+          ? Math.round((attended / totalSessions) * 100)
+          : 100;
+      if (rate < LOW_ATTENDANCE_THRESHOLD) {
+        student.attendanceRate = rate;
+        student.flagged = true;
+        student.flagReason = `Attendance ${rate}% below ${LOW_ATTENDANCE_THRESHOLD}%`;
+        flagged.push(student);
+      }
+    }
+
     return res.status(200).json({
       status: "success",
-      data: { students },
+      data: { students: flagged },
     });
   } catch (error) {
     internalServerError(res, error);
