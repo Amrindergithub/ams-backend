@@ -22,6 +22,17 @@ module.exports.validateRegisterFields = (req, res, next) => {
   }
 };
 
+module.exports.validateAdminRegisterFields = (req, res, next) => {
+  const { error } = Validators.adminRegisterValidation(req.body);
+  if (error) return sendError(error.details[0].message, error, res);
+  const passwordError = passwordHasError(req.body.password);
+  if (!passwordError) {
+    next();
+  } else {
+    sendError(passwordError, "", res);
+  }
+};
+
 function sendError(message, error, res) {
   return res.status(400).json({
     status: Errors.FAILED,

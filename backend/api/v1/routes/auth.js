@@ -32,8 +32,7 @@ router.post(
 */
 router.post(
   "/register-admin",
-  AuthMiddlewares.validateRegisterFields,
-  AuthMiddlewares.validPassword,
+  AuthMiddlewares.validateAdminRegisterFields,
   async (req, res) => {
     try {
       await AuthControllers.registerAsAdmin(req, res);
@@ -80,6 +79,18 @@ router.post(
     }
   }
 );
+
+/* MetaMask wallet login
+    - verifies signature against wallet address
+    - returns tokens if wallet is linked to an account
+*/
+router.post("/login/wallet", async (req, res) => {
+  try {
+    await AuthControllers.loginWithWallet(req, res);
+  } catch (error) {
+    internalServerError(res, error);
+  }
+});
 
 /* user login route
     - validate body

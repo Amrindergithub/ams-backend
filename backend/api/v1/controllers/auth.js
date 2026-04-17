@@ -1,5 +1,6 @@
 const Auth = require("../models/auth");
 const bcrypt = require("bcryptjs");
+const { ethers } = require("ethers");
 const JWTHandler = require("../../../core/jwt");
 const TokenControllers = require("./token");
 const Headers = require("../utils/constants").headers;
@@ -48,6 +49,7 @@ module.exports.registerWithEmail = async (req, res, registerRole) => {
     role: usersRole,
     provider: Headers.EMAIL_KEY,
     status: AccountConstants.accountStatus.active,
+    walletAddress: req.body.walletAddress || null,
   });
 
   // creating user in database
@@ -82,7 +84,7 @@ module.exports.registerWithEmail = async (req, res, registerRole) => {
     - sets status directly to adminApproved so the user can log in immediately
 */
 module.exports.registerAsAdmin = async (req, res) => {
-  const { name, email, password, adminKey, modules } = req.body;
+  const { name, email, password, adminKey, modules, walletAddress } = req.body;
 
   // resolve which role this adminKey grants
   let grantedRole;
@@ -129,6 +131,7 @@ module.exports.registerAsAdmin = async (req, res) => {
     // can log in straight away (SendGrid is disabled in this project)
     status: AccountConstants.accountStatus.adminApproved,
     modules: modulesArray,
+    walletAddress: walletAddress || null,
   });
 
   // creating user in database
@@ -150,6 +153,66 @@ module.exports.registerAsAdmin = async (req, res) => {
       message: Errors.REGISTER_FAILED,
     });
   });
+};
+
+/* MetaMask wallet login
+    - client sends walletAddress + signature of a known message
+    - verify the signature recovers to walletAddress
+    - look up user by walletAddress
+    - return tokens
+*/
+module.exports.loginWithWallet = async (req, res) => {
+  const { walletAddress, signature, message } = req.body;
+
+  if (!walletAddress || !signature || !message) {
+    return res.status(400).json({
+      status: Errors.FAILED,
+      message: "walletAddress, signature, and message are required",
+    });
+  }
+
+  // Verify signature
+  let recovered;
+  try {
+    recovered = ethers.utils.verifyMessage(message, signature);
+  } catch (err) {
+    return res.status(400).json({
+      status: Errors.FAILED,
+      message: "Invalid signature",
+    });
+  }
+
+  if (recovered.toLowerCase() !== walletAddress.toLowerCase()) {
+    return res.status(401).json({
+      status: Errors.FAILED,
+      message: "Signature does not match wallet address",
+    });
+  }
+
+  // Find user by wallet
+  const authUser = await Auth.findOne({
+    walletAddress: { $regex: new RegExp(`^${walletAddress}$`, "i") },
+  });
+
+  if (!authUser) {
+    return res.status(404).json({
+      status: Errors.FAILED,
+      message: "No account linked to this wallet. Please register first.",
+    });
+  }
+
+  // Check account status
+  if (
+    authUser.role === AccountConstants.accRoles.normalUser &&
+    authUser.status !== AccountConstants.accountStatus.active
+  ) {
+    return res.status(401).json({
+      status: Errors.FAILED,
+      message: "Account is not active",
+    });
+  }
+
+  return loginUser(authUser, Headers.EMAIL_KEY, res);
 };
 
 module.exports.registerInstituteUser = async (data) => {

@@ -35,6 +35,12 @@ const authSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Ethereum wallet address for MetaMask-based login (students).
+    walletAddress: {
+      type: String,
+      default: null,
+      sparse: true,
+    },
     /*
     replaced by role and status
     ---------------------------

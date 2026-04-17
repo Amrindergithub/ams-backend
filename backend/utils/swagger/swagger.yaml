@@ -15,6 +15,8 @@ tags:
     description: Authentication for Admin
   - name: User
     description: Routes related to End User
+  - name: NFT
+    description: Attendance NFT certificate minting and lookup (AttendanceNFT contract)
 paths:
   /auth/register:
     post:
@@ -477,6 +479,133 @@ paths:
           description: Internal Server Error
       security:
         - bearerAuth: []
+  /nft/mint:
+    post:
+      tags:
+        - NFT
+      summary: Mint the next eligible NFT certificate for a student
+      description: >-
+        Backend checks the student's `totalCheckIns` against the tier thresholds
+        (Bronze 5, Silver 15, Gold 30, Platinum 50) and mints the highest tier
+        they qualify for. The on-chain tx is signed by the contract owner
+        (Ganache account 0 in development). Requires a student with a
+        registered `walletAddress`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MintRequest"
+      responses:
+        "201":
+          description: Certificate minted on-chain.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MintResponse"
+        "400":
+          description: |
+            Student already has this tier, has no wallet, or hasn't crossed the
+            Bronze threshold yet.
+        "404":
+          description: Student not found.
+        "500":
+          description: Internal Server Error (usually on-chain revert).
+      security:
+        - bearerAuth: []
+  /nft/student/{walletAddress}:
+    get:
+      tags:
+        - NFT
+      summary: List all NFT certificates owned by a wallet
+      parameters:
+        - in: path
+          name: walletAddress
+          required: true
+          schema:
+            type: string
+          example: "0x82d9B534dd1234567890abcdef1234567890abcd"
+      responses:
+        "200":
+          description: Certificate list (empty array if none).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      certificates:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Certificate"
+        "500":
+          description: Internal Server Error
+  /nft/certificate/{tokenId}:
+    get:
+      tags:
+        - NFT
+      summary: Fetch a single certificate by token ID
+      parameters:
+        - in: path
+          name: tokenId
+          required: true
+          schema:
+            type: string
+          example: "1"
+      responses:
+        "200":
+          description: Certificate details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      certificate:
+                        $ref: "#/components/schemas/Certificate"
+        "500":
+          description: Internal Server Error (includes invalid tokenId).
+  /nft/tiers:
+    get:
+      tags:
+        - NFT
+      summary: List tier thresholds + total minted count
+      description: >-
+        Returns the static tier config shared between client and server, plus
+        the `getTotalMinted()` value read from the contract.
+      responses:
+        "200":
+          description: Tier config and global mint count.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      tiers:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Tier"
+                      totalMinted:
+                        type: string
+                        example: "3"
+        "500":
+          description: Internal Server Error
 components:
   securitySchemes:
     bearerAuth:
@@ -551,3 +680,81 @@ components:
         - _userId
         - token
         - createdAt
+    Tier:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Bronze
+        threshold:
+          type: integer
+          example: 5
+      required:
+        - name
+        - threshold
+    Certificate:
+      type: object
+      properties:
+        tokenId:
+          type: string
+          example: "1"
+        student:
+          type: string
+          description: Wallet address the NFT was minted to.
+          example: "0x82d9B534dd1234567890abcdef1234567890abcd"
+        studentId:
+          type: string
+          example: "u2414204"
+        tier:
+          type: string
+          example: Bronze
+        sessionsAttended:
+          type: string
+          example: "7"
+        issuedAt:
+          type: string
+          description: Unix timestamp (seconds) from the block.
+          example: "1718000000"
+      required:
+        - tokenId
+        - student
+        - studentId
+        - tier
+    MintRequest:
+      type: object
+      properties:
+        studentId:
+          type: string
+          example: "u2414204"
+      required:
+        - studentId
+    MintResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: "Bronze certificate minted to 0x82d9B534dd…"
+        data:
+          type: object
+          properties:
+            tokenId:
+              type: string
+              example: "1"
+            txHash:
+              type: string
+              example: "0xabc…"
+            blockNumber:
+              type: integer
+              example: 42
+            tier:
+              type: string
+              example: Bronze
+            sessionsAttended:
+              type: integer
+              example: 7
+            walletAddress:
+              type: string
+              example: "0x82d9B534dd1234567890abcdef1234567890abcd"

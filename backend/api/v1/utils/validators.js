@@ -6,6 +6,7 @@ const registerValidation = (data) => {
     name: Joi.string().min(3).required(),
     email: Joi.string().min(3).max(256).required().email(),
     password: Joi.string().min(6).required(),
+    walletAddress: Joi.string().allow(null, "").optional(),
   });
 
   return schema.validate(data);
@@ -56,11 +57,25 @@ const resetPasswordValidation = (data) => {
   return schema.validate(data);
 };
 
+const adminRegisterValidation = (data) => {
+  const schema = Joi.object({
+    name: Joi.string().min(3).required(),
+    email: Joi.string().min(3).max(256).required().email(),
+    password: Joi.string().min(6).required(),
+    adminKey: Joi.string().required(),
+    modules: Joi.array().items(Joi.string()).default([]),
+    walletAddress: Joi.string().allow(null, "").optional(),
+  });
+
+  return schema.validate(data);
+};
+
 module.exports = {
   usernameLoginValidation,
   resetPasswordValidation,
   updatePasswordValidation,
   emailValidation,
   registerValidation,
+  adminRegisterValidation,
   loginValidation,
 };

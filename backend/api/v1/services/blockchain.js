@@ -1,5 +1,5 @@
 const { ethers } = require("ethers");
-const contractABI = require("../../../artifacts/contracts/AttendanceRecord.sol/AttendanceRecord.json").abi;
+const contractABI = require("../../../build/contracts/AttendanceRecord.json").abi;
 
 const provider = new ethers.providers.JsonRpcProvider(process.env.GANACHE_URL || "http://127.0.0.1:7545");
 
