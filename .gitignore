@@ -1,13 +1,24 @@
 node_modules/
 .env
 
-# removing keys
+# removing keys (both old location and new backend/ location)
 keys/private.pem
 keys/privater.pem
 keys/public.pem
 keys/publicr.pem
+backend/keys/private.pem
+backend/keys/privater.pem
+backend/keys/public.pem
+backend/keys/publicr.pem
 
 .nyc_output
 creds.txt
 
 test.js
+
+# AI / assistant local state — never commit
+.claude/
+CLAUDE.md
+.cursor/
+.aider*
+.continue/
