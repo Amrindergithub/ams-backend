@@ -142,8 +142,13 @@ const Sessions = () => {
           <div style={{ background: "#fff", display: "inline-block", padding: "24px", borderRadius: "16px", marginBottom: "20px" }}>
             <QRCodeSVG value={activeQR.qrToken} size={280} level="H" />
           </div>
-          <p className="mono" style={{ fontSize: "12px", color: "var(--text-muted)", wordBreak: "break-all", maxWidth: "400px", margin: "0 auto" }}>
-            Token: {activeQR.qrToken.slice(0, 24)}...
+          <p
+            className="mono"
+            title="Click to copy"
+            onClick={() => navigator.clipboard.writeText(activeQR.qrToken)}
+            style={{ fontSize: "12px", color: "var(--text-muted)", wordBreak: "break-all", maxWidth: "520px", margin: "0 auto", cursor: "pointer" }}
+          >
+            Token: {activeQR.qrToken}
           </p>
           <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginTop: "12px" }}>
             Display this QR code on the projector for students to scan

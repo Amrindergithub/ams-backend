@@ -111,15 +111,36 @@ const Certificates = () => {
           </div>
           <div className="result-row">
             <span className="label">Wallet</span>
-            <span className="value">{result.walletAddress}</span>
+            <span
+              className="value mono"
+              title="Click to copy"
+              onClick={() => result.walletAddress && navigator.clipboard.writeText(result.walletAddress)}
+              style={{ wordBreak: "break-all", fontSize: "12px", cursor: "pointer" }}
+            >
+              {result.walletAddress}
+            </span>
           </div>
           <div className="result-row">
             <span className="label">Token ID</span>
-            <span className="value">{result.tokenId}</span>
+            <span
+              className="value mono"
+              title="Click to copy"
+              onClick={() => result.tokenId && navigator.clipboard.writeText(String(result.tokenId))}
+              style={{ cursor: "pointer" }}
+            >
+              #{result.tokenId}
+            </span>
           </div>
           <div className="result-row">
             <span className="label">Tx Hash</span>
-            <span className="value">{result.txHash}</span>
+            <span
+              className="value mono"
+              title="Click to copy"
+              onClick={() => result.txHash && navigator.clipboard.writeText(result.txHash)}
+              style={{ wordBreak: "break-all", fontSize: "12px", cursor: "pointer" }}
+            >
+              {result.txHash}
+            </span>
           </div>
           <div className="result-row">
             <span className="label">Block</span>

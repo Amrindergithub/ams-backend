@@ -81,7 +81,14 @@ const SessionDetail = () => {
                     <td className="mono">{new Date(c.checkInTime).toLocaleTimeString()}</td>
                     <td className="mono">{c.checkOutTime ? new Date(c.checkOutTime).toLocaleTimeString() : "—"}</td>
                     <td className="mono">{duration ? `${duration} min` : "—"}</td>
-                    <td className="mono">{c.txHash ? `${c.txHash.slice(0, 14)}...` : "—"}</td>
+                    <td
+                      className="mono"
+                      style={{ maxWidth: "220px", wordBreak: "break-all", fontSize: "11px", lineHeight: "1.4", cursor: c.txHash ? "pointer" : "default" }}
+                      title={c.txHash ? "Click to copy" : undefined}
+                      onClick={() => c.txHash && navigator.clipboard.writeText(c.txHash)}
+                    >
+                      {c.txHash || "—"}
+                    </td>
                     <td>
                       <span className={`badge ${c.status === "checked-out" ? "badge-success" : "badge-pending"}`}>
                         {c.status === "checked-out" ? "\u2713 Complete" : "\u23F2 In Lecture"}

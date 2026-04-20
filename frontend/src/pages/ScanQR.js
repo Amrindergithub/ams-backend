@@ -161,7 +161,14 @@ const ScanQR = ({ walletAddress }) => {
             {result.txHash && (
               <div className="result-row">
                 <span className="label">Tx Hash</span>
-                <span className="value">{result.txHash.slice(0, 20)}...</span>
+                <span
+                  className="value mono"
+                  title="Click to copy"
+                  onClick={() => navigator.clipboard.writeText(result.txHash)}
+                  style={{ wordBreak: "break-all", fontSize: "12px", cursor: "pointer" }}
+                >
+                  {result.txHash}
+                </span>
               </div>
             )}
             {result.blockNumber && (

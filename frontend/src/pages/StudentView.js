@@ -155,7 +155,14 @@ const StudentView = () => {
                 <tr key={r._id}>
                   <td><strong>{r.courseId}</strong></td>
                   <td>{r.date}</td>
-                  <td className="mono">{r.txHash ? `${r.txHash.slice(0, 18)}...` : "—"}</td>
+                  <td
+                    className="mono"
+                    style={{ maxWidth: "240px", wordBreak: "break-all", fontSize: "11px", lineHeight: "1.4", cursor: r.txHash ? "pointer" : "default" }}
+                    title={r.txHash ? "Click to copy" : undefined}
+                    onClick={() => r.txHash && navigator.clipboard.writeText(r.txHash)}
+                  >
+                    {r.txHash || "—"}
+                  </td>
                   <td className="mono">{r.blockNumber || "—"}</td>
                   <td>
                     <span className={`badge ${r.verified ? "badge-success" : "badge-pending"}`}>
