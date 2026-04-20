@@ -1,4 +1,5 @@
 const Auth = require("../models/auth");
+const StudentProfile = require("../models/student_profile");
 const bcrypt = require("bcryptjs");
 const { ethers } = require("ethers");
 const JWTHandler = require("../../../core/jwt");
@@ -212,7 +213,13 @@ module.exports.loginWithWallet = async (req, res) => {
     });
   }
 
-  return loginUser(authUser, Headers.EMAIL_KEY, res);
+  const studentProfile = await StudentProfile.findOne({
+    walletAddress: { $regex: new RegExp(`^${walletAddress}$`, "i") },
+  });
+
+  return loginUser(authUser, Headers.EMAIL_KEY, res, true, {
+    studentId: studentProfile ? studentProfile.studentId : null,
+  });
 };
 
 module.exports.registerInstituteUser = async (data) => {
@@ -1045,7 +1052,7 @@ async function comparePasswords(password, hashedPassword) {
     - generate access and refresh tokens 
     - save tokens and send back to client
 */
-async function loginUser(authUser, provider, res) {
+async function loginUser(authUser, provider, res, _unused, extras) {
   authUser = await createNewRefreshTokenIfAboutToExpire(authUser);
 
   const accessToken = await JWTHandler.genAccessToken(authUser._id);
@@ -1067,6 +1074,7 @@ async function loginUser(authUser, provider, res) {
           role: savedUser.role,
           modules: savedUser.modules || [],
           email: savedUser.email,
+          ...(extras || {}),
         });
     }
     // Print the error and sent back failed response

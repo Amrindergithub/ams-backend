@@ -77,7 +77,10 @@ const Login = ({ onLogin }) => {
       localStorage.setItem("userBackendRole", backendRole || "");
       localStorage.setItem("userModules", JSON.stringify(res.data?.modules || []));
       if (effectiveRole === "student")
-        localStorage.setItem("studentId", res.data?.email || address);
+        localStorage.setItem(
+          "studentId",
+          res.data?.studentId || res.data?.email || address
+        );
 
       onLogin({
         email: res.data?.email || address,
