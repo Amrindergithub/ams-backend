@@ -5,8 +5,11 @@ const BlockchainAttendance = require("../models/blockchain_attendance");
 const Session = require("../models/session");
 const AuthMiddlewares = require("../middlewares/auth");
 const { buildModuleFilter } = require("../utils/module_scope");
-
-const LOW_ATTENDANCE_THRESHOLD = 75;
+const {
+  computeAttendance,
+  flagFrom,
+  LOW_ATTENDANCE_THRESHOLD,
+} = require("../utils/attendance");
 
 // Admin-only middleware chain.
 const adminOnly = [
@@ -14,6 +17,14 @@ const adminOnly = [
   AuthMiddlewares.validateAccessToken,
   AuthMiddlewares.checkAdminAccess,
 ];
+
+// Modules a student is enrolled in. The profile stores a single `course` code
+// today; return as an array so future multi-module enrolment is a drop-in
+// change (schema → [String]).
+function studentModules(student) {
+  if (!student || !student.course) return [];
+  return [student.course];
+}
 
 // POST - Register student profile
 router.post("/register", async (req, res) => {
@@ -89,7 +100,9 @@ router.patch("/wallet/:studentId", async (req, res) => {
   }
 });
 
-// GET - Get student profile
+// GET - Student self-profile. Attendance rate is scoped to the modules the
+// student is enrolled in — NOT "every session in the system" — so rates
+// match the admin view for the same scope.
 router.get("/profile/:studentId", async (req, res) => {
   try {
     const student = await StudentProfile.findOne({ studentId: req.params.studentId });
@@ -100,22 +113,16 @@ router.get("/profile/:studentId", async (req, res) => {
       });
     }
 
-    const totalSessions = await Session.countDocuments({
-      "checkIns.studentId": { $exists: true },
-      isActive: false,
-    });
-
-    const attendedSessions = await Session.countDocuments({
-      "checkIns.studentId": req.params.studentId,
-    });
-
-    const rate = totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 100;
+    const modules = studentModules(student);
+    const { rate, attended, total } = await computeAttendance(
+      student.studentId,
+      modules
+    );
 
     student.attendanceRate = rate;
-    student.flagged = rate < LOW_ATTENDANCE_THRESHOLD;
-    student.flagReason = rate < LOW_ATTENDANCE_THRESHOLD
-      ? `Attendance rate ${rate}% is below ${LOW_ATTENDANCE_THRESHOLD}% threshold`
-      : null;
+    const flag = flagFrom(rate);
+    student.flagged = flag.flagged;
+    student.flagReason = flag.flagReason;
     await student.save();
 
     const recentAttendance = await BlockchainAttendance.find({
@@ -127,8 +134,8 @@ router.get("/profile/:studentId", async (req, res) => {
       data: {
         student,
         recentAttendance,
-        totalSessions,
-        attendedSessions,
+        totalSessions: total,
+        attendedSessions: attended,
       },
     });
   } catch (error) {
@@ -136,39 +143,37 @@ router.get("/profile/:studentId", async (req, res) => {
   }
 });
 
-// GET - All students (admin) — attendance rate is computed relative to the
-// caller's module scope, so two different lecturers see different rates for
-// the same student. Rates are returned inline and NOT persisted, because
-// each admin has a different view.
+// GET - All students (admin). Rate is computed as the intersection of the
+// student's enrolled modules and the admin's module scope — a super_admin
+// sees the student's full rate, a lecturer sees the rate only across modules
+// they teach. Rates are returned inline and NOT persisted (different admins
+// see different numbers for the same student by design).
 router.get("/all", adminOnly, async (req, res) => {
   try {
     const students = await StudentProfile.find()
       .sort({ registeredAt: -1 })
       .lean();
 
-    // Sessions in the caller's module scope that have already ended — these
-    // are the denominator for attendance rate calculations.
     const moduleFilter = buildModuleFilter(req.authUser);
-    const totalSessions = await Session.countDocuments({
-      ...moduleFilter,
-      isActive: false,
-    });
+    const adminModules = moduleFilter.courseId ? moduleFilter.courseId.$in : null;
 
     for (let student of students) {
-      const attended = await Session.countDocuments({
-        ...moduleFilter,
-        "checkIns.studentId": student.studentId,
-      });
-      const rate =
-        totalSessions > 0
-          ? Math.round((attended / totalSessions) * 100)
-          : 100;
+      const enrolled = student.course ? [student.course] : [];
+      const scope = adminModules
+        ? enrolled.filter((m) => adminModules.includes(m))
+        : enrolled;
+
+      const { rate, inScope } = await computeAttendance(student.studentId, scope);
       student.attendanceRate = rate;
-      student.flagged = rate < LOW_ATTENDANCE_THRESHOLD;
-      student.flagReason =
-        rate < LOW_ATTENDANCE_THRESHOLD
-          ? `Attendance ${rate}% below ${LOW_ATTENDANCE_THRESHOLD}%`
-          : null;
+      if (inScope) {
+        const flag = flagFrom(rate);
+        student.flagged = flag.flagged;
+        student.flagReason = flag.flagReason;
+      } else {
+        student.flagged = false;
+        student.flagReason = null;
+      }
+      student.inAdminScope = inScope;
     }
 
     const flaggedCount = students.filter((s) => s.flagged).length;
@@ -187,31 +192,27 @@ router.get("/all", adminOnly, async (req, res) => {
   }
 });
 
-// GET - Flagged students only (admin) — recomputes per-request against the
-// caller's module scope rather than relying on stored flag state.
+// GET - Flagged students only (admin) — same scoping rule as /all.
 router.get("/flagged", adminOnly, async (req, res) => {
   try {
     const allStudents = await StudentProfile.find().lean();
     const moduleFilter = buildModuleFilter(req.authUser);
-    const totalSessions = await Session.countDocuments({
-      ...moduleFilter,
-      isActive: false,
-    });
+    const adminModules = moduleFilter.courseId ? moduleFilter.courseId.$in : null;
 
     const flagged = [];
     for (let student of allStudents) {
-      const attended = await Session.countDocuments({
-        ...moduleFilter,
-        "checkIns.studentId": student.studentId,
-      });
-      const rate =
-        totalSessions > 0
-          ? Math.round((attended / totalSessions) * 100)
-          : 100;
+      const enrolled = student.course ? [student.course] : [];
+      const scope = adminModules
+        ? enrolled.filter((m) => adminModules.includes(m))
+        : enrolled;
+
+      const { rate, inScope } = await computeAttendance(student.studentId, scope);
+      if (!inScope) continue;
       if (rate < LOW_ATTENDANCE_THRESHOLD) {
         student.attendanceRate = rate;
+        const flag = flagFrom(rate);
         student.flagged = true;
-        student.flagReason = `Attendance ${rate}% below ${LOW_ATTENDANCE_THRESHOLD}%`;
+        student.flagReason = flag.flagReason;
         flagged.push(student);
       }
     }
