@@ -1,49 +1,92 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) => {
+  const [blockNumber, setBlockNumber] = useState(null);
+  const [gasGwei, setGasGwei] = useState(null);
+
+  // Poll Ganache for chain heartbeat (block + gas price).
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchChain = async () => {
+      try {
+        const bnRes = await fetch("http://127.0.0.1:7545", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+        });
+        const bnJson = await bnRes.json();
+        if (!cancelled && bnJson.result) setBlockNumber(parseInt(bnJson.result, 16));
+
+        const gpRes = await fetch("http://127.0.0.1:7545", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "eth_gasPrice", params: [] }),
+        });
+        const gpJson = await gpRes.json();
+        if (!cancelled && gpJson.result) {
+          const wei = parseInt(gpJson.result, 16);
+          setGasGwei((wei / 1e9).toFixed(2));
+        }
+      } catch (e) {
+        // offline — leave nulls
+      }
+    };
+
+    fetchChain();
+    const id = setInterval(fetchChain, 6000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  const initials = (user?.name || user?.email || "U")
+    .split(/[@\s]+/)[0]
+    .slice(0, 2)
+    .toUpperCase();
+
+  const handle = user?.role === "admin" ? "lecturer.uel.eth" : "student.uel.eth";
+
   return (
     <header className="navbar">
       <div className="navbar-left">
-        <button className="navbar-toggle" onClick={onToggleSidebar}>
-          &#9776;
-        </button>
-        <span className="navbar-title">Blockchain Attendance Management</span>
+        <button className="navbar-toggle" onClick={onToggleSidebar}>&#9776;</button>
+        <div className="navbar-search">
+          <span className="navbar-search-icon">&#9906;</span>
+          <input
+            className="navbar-search-input"
+            placeholder="Search student, tx hash, block..."
+          />
+          <span className="navbar-search-kbd">⌘K</span>
+        </div>
       </div>
       <div className="navbar-right">
         <div className="chain-pill" title="Ganache local chain heartbeat">
-          <span className="pulse-dot"></span>
-          <span style={{ letterSpacing: "0.06em" }}>GANACHE &middot; LOCAL</span>
+          <span className="pulse-dot" />
+          <span className="chain-pill-main">GANACHE</span>
+          <span className="chain-pill-sep">·</span>
+          <span className="mono chain-pill-block">#{blockNumber ?? "…"}</span>
+          <span className="chain-pill-sep">·</span>
+          <span className="mono chain-pill-gas">{gasGwei ?? "—"} gwei</span>
         </div>
+
         {walletAddress ? (
           <button className="wallet-btn">
-            <span className="wallet-identicon"></span>
-            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+            <span className="wallet-identicon" />
+            <span className="mono">{walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}</span>
           </button>
         ) : (
           <button className="wallet-btn wallet-btn-connect" onClick={onConnect}>
             Connect Wallet
           </button>
         )}
+
         {user && (
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-              {user.name || user.email}
-            </span>
-            <button
-              onClick={onLogout}
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-color)",
-                color: "var(--text-secondary)",
-                padding: "6px 14px",
-                borderRadius: "var(--radius-sm)",
-                cursor: "pointer",
-                fontSize: "12px",
-                fontFamily: "var(--font-sans)",
-              }}
-            >
-              Logout
-            </button>
+          <div className="user-pill">
+            <div className="user-avatar">{initials}</div>
+            <div className="user-meta">
+              <span className="user-name">{user.name || user.email}</span>
+              <span className="user-handle mono">{handle}</span>
+            </div>
+            <button className="user-logout" onClick={onLogout} title="Logout">⎋</button>
           </div>
         )}
       </div>
