@@ -108,4 +108,17 @@ router.get("/tiers", async (req, res) => {
   }
 });
 
+// GET - Per-tier breakdown (counts of minted tokens by tier)
+router.get("/tier-stats", async (req, res) => {
+  try {
+    const breakdown = await nft.getTierBreakdown();
+    return res.status(200).json({
+      status: "success",
+      data: breakdown,
+    });
+  } catch (error) {
+    internalServerError(res, error);
+  }
+});
+
 module.exports = router;

@@ -71,6 +71,23 @@ const getTotalMinted = async () => {
   return total.toString();
 };
 
+// Walk all minted tokens and tally by tier. Cheap on a Ganache dev chain
+// but should be replaced by an event-log scan for any production deployment.
+const getTierBreakdown = async () => {
+  const contract = getContract();
+  const total = parseInt((await contract.getTotalMinted()).toString(), 10);
+  const counts = { Bronze: 0, Silver: 0, Gold: 0, Platinum: 0 };
+  for (let i = 0; i < total; i++) {
+    try {
+      const cert = await contract.getCertificate(i);
+      if (counts[cert.tier] !== undefined) counts[cert.tier] += 1;
+    } catch (e) {
+      // skip
+    }
+  }
+  return { total, counts };
+};
+
 module.exports = {
   TIERS,
   getEligibleTier,
@@ -78,4 +95,5 @@ module.exports = {
   getCertificate,
   getStudentCertificates,
   getTotalMinted,
+  getTierBreakdown,
 };
