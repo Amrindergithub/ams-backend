@@ -76,7 +76,7 @@ const Students = () => {
                 borderRadius: "6px",
                 cursor: "pointer",
                 fontSize: "12px",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "var(--font-sans)",
               }}
             >
               {showFlaggedOnly ? "\u26A0 Flagged Only" : "Show Flagged"}

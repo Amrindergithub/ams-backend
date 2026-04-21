@@ -74,11 +74,16 @@ function App() {
           <Route path="/student/login" element={<Login onLogin={handleLogin} />} />
           <Route path="/student/register" element={<Login onLogin={handleLogin} />} />
           <Route path="/" element={
-            <div className="landing-page">
+            <div className="landing-page ambient-bg">
+              <div className="grid-overlay" />
               <div className="landing-container">
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "20px", padding: "6px 14px", background: "var(--bg-glass)", border: "1px solid var(--border-color)", borderRadius: "999px", backdropFilter: "blur(12px)" }}>
+                  <span className="pulse-dot" />
+                  <span style={{ fontSize: "11px", color: "var(--text-secondary)", letterSpacing: "0.18em", textTransform: "uppercase", fontFamily: "var(--font-mono)" }}>Ganache &middot; on-chain</span>
+                </div>
                 <div className="login-brand-icon" style={{ width: "64px", height: "64px", fontSize: "28px", margin: "0 auto 24px" }}>A</div>
-                <h1 style={{ fontSize: "36px", marginBottom: "12px" }}>AMS DApp</h1>
-                <p style={{ color: "var(--text-secondary)", fontSize: "16px", marginBottom: "48px" }}>Blockchain-Verified Attendance Management System</p>
+                <h1 className="grad-text" style={{ fontSize: "52px", letterSpacing: "-0.04em", lineHeight: 1, marginBottom: "16px" }}>AMS DApp</h1>
+                <p style={{ color: "var(--text-secondary)", fontSize: "16px", marginBottom: "48px", lineHeight: 1.55, maxWidth: "520px", margin: "0 auto 48px" }}>Blockchain-verified attendance management. Every lecture signed on-chain, every certificate a collectible NFT.</p>
                 <div style={{ display: "flex", gap: "20px", justifyContent: "center" }}>
                   <a href="/admin/login" className="landing-btn landing-btn-admin">Admin / Lecturer Portal</a>
                   <a href="/student/login" className="landing-btn landing-btn-student">Student Portal</a>

@@ -200,11 +200,19 @@ const Login = ({ onLogin }) => {
             <div className={`login-brand-icon ${isAdminRoute ? "icon-admin" : "icon-student"}`}>
               {isAdminRoute ? "A" : "S"}
             </div>
-            <h1>AMS DApp</h1>
-            <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+              <span className="pulse-dot" />
+              <span style={{ fontSize: "11px", color: "var(--text-muted)", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+                Ganache &middot; on-chain
+              </span>
+            </div>
+            <h1 className="grad-text" style={{ fontSize: "40px", letterSpacing: "-0.03em", lineHeight: 1.05, margin: 0 }}>
+              AMS DApp
+            </h1>
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "12px 0 8px", textTransform: "uppercase", letterSpacing: "1px" }}>
               {isAdminRoute ? "Admin Portal" : "Student Portal"}
             </p>
-            <p>Blockchain-Verified Attendance Management System</p>
+            <p>Blockchain-verified attendance, signed on-chain every lecture.</p>
           </div>
           <div className="login-features">
             {isAdminRoute ? (

@@ -113,7 +113,7 @@ const MyCertificates = () => {
                 <div style={{ textAlign: "left", fontSize: "13px" }}>
                   <div className="result-row">
                     <span className="label">Token ID</span>
-                    <span className="value" style={{ fontFamily: "'JetBrains Mono', monospace" }}>#{cert.tokenId}</span>
+                    <span className="value" style={{ fontFamily: "var(--font-mono)" }}>#{cert.tokenId}</span>
                   </div>
                   <div className="result-row">
                     <span className="label">Student ID</span>

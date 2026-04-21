@@ -242,7 +242,7 @@ const Certificates = () => {
                             cursor: "pointer",
                             fontSize: "12px",
                             fontWeight: 600,
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "var(--font-sans)",
                           }}
                         >
                           {minting === s.studentId ? "Minting..." : `Mint ${eligible.name}`}
