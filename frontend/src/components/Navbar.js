@@ -10,9 +10,9 @@ const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) =
         <span className="navbar-title">Blockchain Attendance Management</span>
       </div>
       <div className="navbar-right">
-        <div className="network-badge">
-          <span className="network-dot"></span>
-          Ganache Local
+        <div className="chain-pill" title="Ganache local chain heartbeat">
+          <span className="pulse-dot"></span>
+          <span style={{ letterSpacing: "0.06em" }}>GANACHE &middot; LOCAL</span>
         </div>
         {walletAddress ? (
           <button className="wallet-btn">
@@ -39,7 +39,7 @@ const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) =
                 borderRadius: "var(--radius-sm)",
                 cursor: "pointer",
                 fontSize: "12px",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "var(--font-sans)",
               }}
             >
               Logout
