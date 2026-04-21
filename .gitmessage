@@ -1,0 +1,14 @@
+# <type>(<scope>): <short imperative subject, ≤72 chars>
+#
+# Types: feat, fix, refactor, docs, style, test, chore, perf, build
+# Scopes (examples): ui, ui/dashboard, ui/sessions, api/nft, api/auth,
+#                    auth, contracts, repo, deps, ci
+#
+# --- body (optional) ------------------------------------------------
+# Wrap at 72. Explain *why* the change is made, not *what* changed
+# (the diff shows what). Leave a blank line between subject and body.
+#
+# --- footer (optional) ----------------------------------------------
+# Breaking changes: prefix with "BREAKING CHANGE: ...".
+# Issue refs: "Closes #123" / "Refs #45".
+# Do not add AI-attribution trailers — the commit-msg hook blocks them.
