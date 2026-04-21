@@ -26,6 +26,22 @@ Blockchain-backed Attendance Management System for CN6035. This folder is the Ph
 | `/admin/analytics`          | #09    | Analytics                                    |
 | `/verify`                   | #10    | Public verifier                              |
 
+## Screenshots
+
+Design-handoff reference shots live in `docs/screens/` (add PNGs as `02-dashboard.png`, `03-sessions.png`, etc. — filenames match the design numbers in the table above).
+
+| # | Screen | Preview |
+|---|--------|---------|
+| 02 | Admin dashboard            | `docs/screens/02-dashboard.png` |
+| 03 | Live session QR            | `docs/screens/03-sessions.png` |
+| 04 | Student scan flow          | `docs/screens/04-scan.png` |
+| 05 | Student portal             | `docs/screens/05-student.png` |
+| 06 | Certificate gallery        | `docs/screens/06-certificates.png` |
+| 07 | Credential detail overlay  | `docs/screens/07-credential.png` |
+| 08 | Block explorer             | `docs/screens/08-transactions.png` |
+| 09 | Analytics                  | `docs/screens/09-analytics.png` |
+| 10 | Public verifier            | `docs/screens/10-verify.png` |
+
 ## Design system
 
 Near-black crypto surfaces, violet → mint gradient (`#7c5cff → #00d4a8`), Geist / Geist Mono typography, tier-metallic NFT palette (bronze / silver / gold / platinum), glass panels with backdrop blur.
