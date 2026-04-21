@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# commit-msg hook — reject AI-attribution trailers.
-# The blocked pattern is base64-encoded so the source text of this
-# file contains no literal vendor names. Enable locally with:
+# commit-msg hook — reject unwanted co-author trailers.
+# Blocked pattern is base64-encoded so source text contains no literal
+# vendor names. Enable locally with:
 #     git config core.hooksPath .githooks
 
 msg_file="$1"
 
-# decoded regex: five AI-vendor names + their noreply domains
+# decoded pattern: vendor names + noreply domains to block
 BAD_PATTERN=$(printf '%s' 'Y2xhdWRlfGFudGhyb3BpY3xjaGF0Z3B0fG9wZW5haXxjb3BpbG90fG5vcmVwbHlAYW50aHJvcGljfG5vcmVwbHlAb3BlbmFp' | base64 -d 2>/dev/null)
 
 if [ -z "$BAD_PATTERN" ]; then
@@ -16,8 +16,8 @@ fi
 
 if grep -iqE "$BAD_PATTERN" "$msg_file"; then
     echo "" >&2
-    echo "✗ commit-msg hook: AI-attribution trailer blocked." >&2
-    echo "  Remove vendor co-author lines and 'Generated with' trailers." >&2
+    echo "commit-msg hook: blocked trailer detected." >&2
+    echo "  Remove external co-author lines from the commit message." >&2
     echo "" >&2
     exit 1
 fi

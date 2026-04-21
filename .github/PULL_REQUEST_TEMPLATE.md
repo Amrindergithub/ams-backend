@@ -16,7 +16,7 @@
 - [ ] **Frontend:** `cd frontend && npm start` compiles without warnings; walk through affected screens.
 - [ ] **Contracts:** `cd backend && npx truffle test` passes (only if Solidity changed).
 - [ ] Committed with conventional-commits subject lines.
-- [ ] No AI-attribution trailers in any commit on this branch.
+- [ ] No external co-author trailers in any commit on this branch.
 
 ## Notes
 

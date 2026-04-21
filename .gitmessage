@@ -11,4 +11,4 @@
 # --- footer (optional) ----------------------------------------------
 # Breaking changes: prefix with "BREAKING CHANGE: ...".
 # Issue refs: "Closes #123" / "Refs #45".
-# Do not add AI-attribution trailers — the commit-msg hook blocks them.
+# Do not add external co-author trailers — the commit-msg hook blocks them.
