@@ -2,6 +2,41 @@
 
 Blockchain-backed Attendance Management System for CN6035. This folder is the Phase 1 deliverable: a React SPA talking to a Node/Express API that persists to MongoDB and writes attendance + certificate records to a local Ganache chain via Truffle-managed smart contracts.
 
+## Features
+
+- **Admin dashboard** — KPI cards with 7-day sparklines, recent attendance with on-chain hash pills, live NFT tier distribution (Bronze/Silver/Gold/Platinum).
+- **Live session QR** — Projector-friendly QR broadcast with a live check-in feed polled every 5s.
+- **Student scan flow** — Three-stage flow: camera reticle → confirmation receipt → on-chain success seal.
+- **Student portal** — SVG attendance rate ring, NFT tier progress, recent check-ins with copyable tx hashes.
+- **Certificate gallery** — Holographic tier cards with shine sweep; click opens a credential detail overlay.
+- **Block explorer** — Filter-chip transaction view with click-to-copy hashes and relative timestamps.
+- **Analytics** — 14-day gradient-stroke trend chart, module distribution bars, top-students leaderboard.
+- **Public verifier** — Paste any attendance hash / tx hash / token id to confirm it was committed to the AMS ledger.
+
+## Screens (design handoff references)
+
+| Route                       | Design | Description                                  |
+|-----------------------------|:------:|----------------------------------------------|
+| `/admin`                    | #02    | Admin dashboard                              |
+| `/admin/sessions`           | #03    | Live session QR + check-in feed              |
+| `/student/scan`             | #04    | Student scan flow (idle → confirm → on-chain)|
+| `/student`                  | #05    | Student portal                               |
+| `/student/certificates`     | #06/07 | Certificate gallery + credential overlay     |
+| `/admin/transactions`       | #08    | Block explorer                               |
+| `/admin/analytics`          | #09    | Analytics                                    |
+| `/verify`                   | #10    | Public verifier                              |
+
+## Design system
+
+Near-black crypto surfaces, violet → mint gradient (`#7c5cff → #00d4a8`), Geist / Geist Mono typography, tier-metallic NFT palette (bronze / silver / gold / platinum), glass panels with backdrop blur.
+
+## Tech stack
+
+- **Frontend:** React 18 (CRA), react-router-dom, ethers v5, `qrcode.react`, `html5-qrcode`.
+- **Backend:** Node.js 18, Express, Mongoose, JWT auth.
+- **Chain:** Solidity 0.8 contracts (`AttendanceRecord.sol`, `AttendanceNFT.sol`) deployed via Truffle to Ganache (chainId 1337).
+- **Storage:** MongoDB (`ams-dapp-dev`) for off-chain metadata, Ganache for immutable records.
+
 ## Layout
 
 ```
@@ -49,9 +84,20 @@ npm start          # React dev server on :3000
 
 ## Key endpoints
 
-- `POST /api/v1/auth/login` — email+password
+- `POST /api/v1/auth/login` — email + password
 - `POST /api/v1/auth/wallet-login` — sign-in-with-Ethereum flow
 - `GET  /api/v1/session/active` — current QR session
 - `POST /api/v1/attendance/checkin` — student QR check-in
+- `GET  /api/v1/nft/tier-stats` — per-tier NFT distribution (dashboard panel)
 - `GET  /api/v1/nft/tiers`, `POST /api/v1/nft/mint`, `GET /api/v1/nft/student/:wallet`, `GET /api/v1/nft/certificate/:tokenId`
 - Interactive docs: [http://localhost:5001/explorer](http://localhost:5001/explorer)
+
+## Contributing
+
+- `main` = always green, submission-ready. Do not commit directly once the submission is tagged.
+- Feature work on `feat/<short-slug>` branches, merged via pull request (even as a solo repo — it builds the review trail).
+- **Conventional commits** — subject line `type(scope): imperative summary ≤72 chars`.
+  - Types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`, `build`.
+  - Scopes (examples): `ui`, `ui/dashboard`, `api/nft`, `auth`, `contracts`, `deps`, `repo`.
+- Run `git config commit.template .gitmessage` once after cloning to pick up the local commit template.
+- The `.githooks/commit-msg` hook blocks AI-attribution trailers; enable with `git config core.hooksPath .githooks`.
