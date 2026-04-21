@@ -1,26 +1,36 @@
 {
-  "name": "attendance-management-system",
+  "name": "ams-dapp-backend",
   "version": "1.0.0",
-  "description": "Template for node.js REST API (includes auth)",
+  "description": "AMS DApp backend — Node/Express API + Truffle workspace for the CN6035 attendance management DApp.",
   "main": "index.js",
   "scripts": {
     "dev": "NODE_ENV=dev nodemon index.js",
     "start": "NODE_ENV=prod node index.js",
     "format": "prettier \"./**/*.{js,html,json}\" --write",
     "lint": "eslint \"./**/*.js\"",
-    "test": "mocha tests/v1/test --exit"
+    "test": "mocha tests/v1/test --exit",
+    "migrate": "truffle migrate --reset",
+    "compile": "truffle compile"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fayaz07/attendance-management-system.git"
+    "url": "git+https://github.com/Amrindergithub/ams-backend.git"
   },
-  "keywords": [],
-  "author": " (@fayaz07)",
-  "license": "ISC",
+  "keywords": [
+    "attendance",
+    "blockchain",
+    "ethereum",
+    "truffle",
+    "ganache",
+    "nft",
+    "cn6035"
+  ],
+  "author": "Amrinder Bhullar",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/fayaz07/attendance-management-system/issues"
+    "url": "https://github.com/Amrindergithub/ams-backend/issues"
   },
-  "homepage": "https://github.com/fayaz07/attendance-management-system#readme",
+  "homepage": "https://github.com/Amrindergithub/ams-backend#readme",
   "devDependencies": {
     "chai": "^4.5.0",
     "chai-http": "^4.3.0",
