@@ -1,103 +1,152 @@
 import React, { useState } from "react";
 import { verifyAttendance } from "../utils/api";
 
+// Public verifier (design #10). Hero input, big success/fail verdict,
+// metadata card laid out like a crypto wallet receipt.
+
 const Verify = () => {
   const [hash, setHash] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(null);
 
   const handleVerify = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    if (!hash.trim()) return;
     setLoading(true);
     setError(null);
     setResult(null);
-
     try {
-      const res = await verifyAttendance(hash);
+      const res = await verifyAttendance(hash.trim());
       setResult(res.data.data);
     } catch (err) {
-      setError("Failed to verify attendance on blockchain");
+      setError("Failed to verify attendance on blockchain. Hash not found or backend unreachable.");
     }
     setLoading(false);
   };
 
+  const copy = (text, key) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 1200);
+  };
+
+  const onChain = result?.onChain?.exists;
+
   return (
-    <div>
-      <div className="page-header">
-        <h1>Verify Attendance</h1>
-        <p>Check if an attendance record exists on the blockchain</p>
+    <div className="dash">
+      <div className="dash-header">
+        <div>
+          <span className="eyebrow">Public Verifier</span>
+          <h1 className="dash-title">
+            Verify a <span className="grad-text">credential</span>
+          </h1>
+          <p className="dash-subtitle">
+            Paste any attendance hash to confirm it was committed to the AMS ledger.
+          </p>
+        </div>
       </div>
 
-      <div className="form-card">
-        <form onSubmit={handleVerify}>
-          <div className="form-group">
-            <label className="form-label">Attendance Hash</label>
+      {/* Hero input */}
+      <div className="verify-hero">
+        <div className="verify-hero-glow" />
+        <form onSubmit={handleVerify} className="verify-form">
+          <div className="verify-input-wrap">
+            <span className="verify-input-icon">&#9906;</span>
             <input
-              type="text"
-              className="form-input mono"
+              className="verify-input mono"
               value={hash}
               onChange={(e) => setHash(e.target.value)}
-              placeholder="0x..."
-              required
+              placeholder="0x… attendance hash, tx hash, or token id"
+              autoFocus
             />
+            {hash && (
+              <button type="button" className="verify-clear" onClick={() => setHash("")}>&times;</button>
+            )}
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? "Verifying..." : "Verify on Blockchain"}
+          <button type="submit" className="btn-grad" disabled={loading}>
+            {loading ? "Verifying…" : "Verify on-chain →"}
           </button>
         </form>
-
-        {result && (
-          <div className={`result-card ${result.onChain.exists ? "success" : "error"}`}>
-            <h3>
-              {result.onChain.exists ? "\u2713 Attendance Verified" : "\u2717 Not Found on Blockchain"}
-            </h3>
-            {result.onChain.exists && (
-              <>
-                <div className="result-row">
-                  <span className="label">Wallet Address</span>
-                  <span className="value">{result.onChain.student}</span>
-                </div>
-                <div className="result-row">
-                  <span className="label">Block Timestamp</span>
-                  <span className="value">
-                    {new Date(result.onChain.timestamp * 1000).toLocaleString()}
-                  </span>
-                </div>
-              </>
-            )}
-            {result.offChain && (
-              <>
-                <div className="result-row">
-                  <span className="label">Student ID</span>
-                  <span className="value">{result.offChain.studentId}</span>
-                </div>
-                <div className="result-row">
-                  <span className="label">Course</span>
-                  <span className="value">{result.offChain.courseId}</span>
-                </div>
-                <div className="result-row">
-                  <span className="label">Date</span>
-                  <span className="value">{result.offChain.date}</span>
-                </div>
-                <div className="result-row">
-                  <span className="label">Transaction Hash</span>
-                  <span className="value">{result.offChain.txHash}</span>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {error && (
-          <div className="result-card error">
-            <h3>&#10007; Error</h3>
-            <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>{error}</p>
-          </div>
-        )}
+        <div className="verify-hero-chips">
+          <span className="chip-btn">chainId 1337</span>
+          <span className="chip-btn">AttendanceNFT.sol</span>
+          <span className="chip-btn"><span className="pulse-dot" /> Live</span>
+        </div>
       </div>
+
+      {/* Result */}
+      {result && (
+        <div className={`verify-result ${onChain ? "ok" : "fail"}`}>
+          <div className="verify-result-head">
+            <div className={`verify-verdict-icon ${onChain ? "ok" : "fail"}`}>
+              {onChain ? "✓" : "✗"}
+            </div>
+            <div>
+              <div className="verify-verdict">
+                {onChain ? "Credential verified" : "Not found on-chain"}
+              </div>
+              <div className="verify-verdict-sub">
+                {onChain
+                  ? "This record was committed to the AMS ledger and has not been tampered with."
+                  : "No matching record in the attendance contract. Double-check the hash."}
+              </div>
+            </div>
+            {onChain && <div className="verify-seal grad-text">SIGNED</div>}
+          </div>
+
+          {onChain && (
+            <div className="verify-receipt">
+              <ReceiptRow label="Wallet" value={result.onChain.student} mono copyable onCopy={copy} k="wallet" copied={copied} />
+              <ReceiptRow
+                label="Committed at"
+                value={new Date(result.onChain.timestamp * 1000).toLocaleString()}
+              />
+              {result.offChain && (
+                <>
+                  <ReceiptRow label="Student ID" value={result.offChain.studentId} />
+                  <ReceiptRow label="Module"     value={result.offChain.courseId} />
+                  <ReceiptRow label="Date"       value={result.offChain.date} />
+                  <ReceiptRow label="Tx hash"    value={result.offChain.txHash} mono copyable onCopy={copy} k="tx" copied={copied} />
+                  {result.offChain.blockNumber && (
+                    <ReceiptRow label="Block" value={`#${result.offChain.blockNumber}`} mono />
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <div className="verify-result fail">
+          <div className="verify-result-head">
+            <div className="verify-verdict-icon fail">✗</div>
+            <div>
+              <div className="verify-verdict">Error</div>
+              <div className="verify-verdict-sub">{error}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+const ReceiptRow = ({ label, value, mono, copyable, onCopy, k, copied }) => (
+  <div className="receipt-row">
+    <span className="receipt-label">{label}</span>
+    <span
+      className={`receipt-value ${mono ? "mono" : ""} ${copyable ? "copyable" : ""}`}
+      onClick={copyable ? () => onCopy(value, k) : undefined}
+      title={copyable ? "Click to copy" : undefined}
+    >
+      {value}
+      {copyable && <span className="receipt-copy">{copied === k ? "✓" : "⎘"}</span>}
+    </span>
+  </div>
+);
 
 export default Verify;
