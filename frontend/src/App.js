@@ -9,7 +9,6 @@ import Transactions from "./pages/Transactions";
 import Analytics from "./pages/Analytics";
 import Login from "./pages/Login";
 import Sessions from "./pages/Sessions";
-import SessionDetail from "./pages/SessionDetail";
 import ScanQR from "./pages/ScanQR";
 import Students from "./pages/Students";
 import StudentView from "./pages/StudentView";
@@ -119,7 +118,6 @@ function App() {
                   <Route path="/" element={<Navigate to="/admin" />} />
                   <Route path="/admin" element={<Dashboard />} />
                   <Route path="/admin/sessions" element={<Sessions />} />
-                  <Route path="/admin/sessions/:id" element={<SessionDetail />} />
                   <Route path="/admin/students" element={<Students />} />
                   <Route path="/admin/certificates" element={<Certificates />} />
                   <Route path="/admin/check-in" element={<CheckIn walletAddress={walletAddress} />} />
