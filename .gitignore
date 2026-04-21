@@ -1,7 +1,7 @@
 node_modules/
 .env
 
-# removing keys (both old location and new backend/ location)
+# keys (both legacy root and backend/ locations)
 keys/private.pem
 keys/privater.pem
 keys/public.pem
@@ -16,9 +16,4 @@ creds.txt
 
 test.js
 
-# AI / assistant local state — never commit
-.claude/
-CLAUDE.md
-.cursor/
-.aider*
-.continue/
+# local agent / assistant state is ignored via .git/info/exclude
