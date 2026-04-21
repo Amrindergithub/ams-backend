@@ -108,6 +108,15 @@ npm start          # React dev server on :3000
 - `GET  /api/v1/nft/tiers`, `POST /api/v1/nft/mint`, `GET /api/v1/nft/student/:wallet`, `GET /api/v1/nft/certificate/:tokenId`
 - Interactive docs: [http://localhost:5001/explorer](http://localhost:5001/explorer)
 
+## Known audit notes
+
+After `npm audit fix`, residual advisories remain in **build-time / dev tooling only** — no runtime (production) exposure:
+
+- **Backend:** transitive webpack/ws/yargs-parser warnings via `ganache`, `truffle`, `solc`. Clearing them needs `truffle@5.1.67` (major downgrade) — deferred post-submission.
+- **Frontend:** transitive warnings in `react-scripts` 5 (webpack-dev-server, workbox, svgo). Clearing them needs `react-scripts@0.0.0` per `npm audit fix --force` — not viable, deferred.
+
+No advisories touch the served API surface or the shipped React bundle.
+
 ## Contributing
 
 - `main` = always green, submission-ready. Do not commit directly once the submission is tagged.
