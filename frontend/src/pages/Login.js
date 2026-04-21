@@ -8,7 +8,6 @@ const Login = ({ onLogin }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdminRoute = location.pathname.startsWith("/admin");
-  const isStudentRoute = location.pathname.startsWith("/student");
   const role = isAdminRoute ? "admin" : "student";
 
   const [mode, setMode] = useState("login");
