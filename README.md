@@ -125,4 +125,4 @@ No advisories touch the served API surface or the shipped React bundle.
   - Types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`, `build`.
   - Scopes (examples): `ui`, `ui/dashboard`, `api/nft`, `auth`, `contracts`, `deps`, `repo`.
 - Run `git config commit.template .gitmessage` once after cloning to pick up the local commit template.
-- The `.githooks/commit-msg` hook blocks AI-attribution trailers; enable with `git config core.hooksPath .githooks`.
+- The `.githooks/commit-msg` hook blocks unwanted external co-author trailers; enable with `git config core.hooksPath .githooks`.
