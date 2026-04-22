@@ -51,7 +51,8 @@ const StudentView = () => {
               setWalletSaved(true);
             }
           } catch (e) {
-            console.log("Wallet sync skipped:", e.message);
+            // Wallet sync is best-effort — silently swallow if MetaMask
+            // is locked or the account permission prompt is dismissed.
           }
         }
       } catch (err) {

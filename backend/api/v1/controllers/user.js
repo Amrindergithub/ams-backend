@@ -3,6 +3,7 @@ const Errors = require("../utils/constants").errors;
 const Success = require("../utils/constants").successMessages;
 const crypto = require("crypto");
 const mongoose = require("mongoose");
+const logger = require("../../../core/logger");
 
 async function createUser(userData) {
   var user = new User({
@@ -140,7 +141,7 @@ async function fetchNameOfUser(email) {
       name = document.firstName + " " + document.lastName;
     })
     .catch((err) => {
-      console.log(err);
+      logger.error("getUserName lookup failed", err);
       name = " ";
     });
   return name;

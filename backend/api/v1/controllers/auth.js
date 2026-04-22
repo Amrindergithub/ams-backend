@@ -9,6 +9,7 @@ const Errors = require("../utils/constants").errors;
 const Success = require("../utils/constants").successMessages;
 const UserControllers = require("../controllers/user");
 const Helpers = require("../../../core/helpers");
+const logger = require("../../../core/logger");
 const AccountConstants = require("../utils/constants").account;
 const PasswordGenerator = require("generate-password");
 const StringUtils = require("../utils/string");
@@ -148,7 +149,7 @@ module.exports.registerAsAdmin = async (req, res) => {
         modules: modulesArray,
       });
     }
-    console.log(error);
+    logger.error("admin register failed", error);
     return res.status(403).json({
       status: Errors.FAILED,
       message: Errors.REGISTER_FAILED,
@@ -267,7 +268,7 @@ module.exports.registerInstituteUser = async (data) => {
     const savedUser = await newAuthUser.save();
 
     if (savedUser) {
-      console.log("looks like saved");
+      logger.info("auth: new user saved");
       // console.log(savedUser);
       const nameArr = data.name.toString().split(" ");
       const firstName = nameArr[0];
@@ -541,7 +542,7 @@ module.exports.verifyAccByToken = async (req, res) => {
       });
 
     // Print the error and sent back failed response
-    console.log(error);
+    logger.error("account verification failed", error);
     return res.status(403).json({
       status: Errors.FAILED,
       message: Success.ACC_VERIFIED,
@@ -647,7 +648,7 @@ module.exports.updatePassword = async (req, res) => {
       });
 
     // Print the error and sent back failed response
-    console.log(error);
+    logger.error("password change failed", error);
     return res.status(403).json({
       status: Errors.FAILED,
       message: Helpers.joinWithCommaSpace(
@@ -758,7 +759,7 @@ module.exports.resetPassword = async (req, res) => {
       });
 
     // Print the error and sent back failed response
-    console.log(error);
+    logger.error("password reset failed", error);
     return res.status(403).json({
       status: Errors.FAILED,
       message: Helpers.joinWithCommaSpace(
@@ -795,7 +796,7 @@ module.exports.refreshTokens = async (req, res) => {
     ) {
       _generateNewTokensAndSendBackToClient(authUser, res);
     } else {
-      console.log(`Invalid provider type ${authUser.provider}`);
+      logger.warn(`Invalid provider type ${authUser.provider}`);
       return res.status(403).json({
         status: Errors.FAILED,
         message: Helpers.joinWithCommaSpace(
@@ -1078,7 +1079,7 @@ async function loginUser(authUser, provider, res, _unused, extras) {
         });
     }
     // Print the error and sent back failed response
-    console.log(error);
+    logger.error("login failed", error);
     return res.status(403).json({
       status: Errors.FAILED,
       message: Helpers.joinWithCommaSpace(
@@ -1110,7 +1111,7 @@ async function _generateNewTokensAndSendBackToClient(authUser, res) {
         });
     }
     // Print the error and sent back failed response
-    console.log(error);
+    logger.error("token refresh failed", error);
     return res.status(403).json({
       status: Errors.FAILED,
       message: Errors.TOKEN_REFRESH_FAILED,
