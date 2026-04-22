@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API, { getRecords, getAllStudents, exportCSV } from "../utils/api";
+import { useToast } from "../context/ToastContext";
 
 const TIER_META = {
   Bronze:   { color: "#c97a3b", threshold: 5,  grad: "linear-gradient(90deg, #7a4520, #c97a3b)" },
@@ -54,6 +55,7 @@ const Dashboard = () => {
   const [tierStats, setTierStats] = useState({ total: 0, counts: { Bronze: 0, Silver: 0, Gold: 0, Platinum: 0 } });
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(null);
+  const toast = useToast();
 
   const userName = localStorage.getItem("userName") || "Lecturer";
   const userModulesRaw = localStorage.getItem("userModules");
@@ -133,8 +135,9 @@ const Dashboard = () => {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      toast.success("Attendance CSV downloaded");
     } catch (err) {
-      console.error(err);
+      toast.error("Export failed — is the backend reachable?");
     }
   };
 

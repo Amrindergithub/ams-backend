@@ -15,9 +15,10 @@ import StudentView from "./pages/StudentView";
 import Certificates from "./pages/Certificates";
 import MyCertificates from "./pages/MyCertificates";
 import { connectWallet, isWalletConnected } from "./utils/wallet";
+import { ToastProvider } from "./context/ToastContext";
 import "./App.css";
 
-function App() {
+function AppInner() {
   const [walletAddress, setWalletAddress] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
@@ -141,6 +142,14 @@ function App() {
         </div>
       </div>
     </Router>
+  );
+}
+
+function App() {
+  return (
+    <ToastProvider>
+      <AppInner />
+    </ToastProvider>
   );
 }
 
