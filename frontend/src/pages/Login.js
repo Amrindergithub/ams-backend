@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import { login, register, registerAdmin, registerStudent, walletLogin } from "../utils/api";
@@ -25,6 +25,16 @@ const Login = ({ onLogin }) => {
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
   const [walletConnecting, setWalletConnecting] = useState(false);
+  const [metamaskAvailable, setMetamaskAvailable] = useState(true);
+
+  useEffect(() => {
+    // Re-check on mount + once after a short delay — some extensions
+    // inject `window.ethereum` asynchronously after document load.
+    const check = () => setMetamaskAvailable(Boolean(window.ethereum));
+    check();
+    const t = setTimeout(check, 400);
+    return () => clearTimeout(t);
+  }, []);
 
   const courses = COURSES;
 
@@ -277,6 +287,34 @@ const Login = ({ onLogin }) => {
                 : "Register with your student details"}
             </p>
 
+            {!metamaskAvailable && (
+              <div
+                role="alert"
+                style={{
+                  padding: "12px 14px",
+                  background: "var(--warning-bg)",
+                  border: "1px solid rgba(255, 184, 77, 0.35)",
+                  borderRadius: "10px",
+                  fontSize: "13px",
+                  color: "var(--text-primary)",
+                  lineHeight: 1.45,
+                  marginBottom: "18px",
+                }}
+              >
+                <strong>MetaMask required for wallet login.</strong>{" "}
+                Install it from{" "}
+                <a
+                  href="https://metamask.io/download/"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "var(--accent-light)", textDecoration: "underline" }}
+                >
+                  metamask.io
+                </a>{" "}
+                then reload this page. Email + password sign-in still works without it.
+              </div>
+            )}
+
             {mode === "login" && (
               <form onSubmit={handleLogin}>
                 <div className="form-group">
@@ -304,7 +342,8 @@ const Login = ({ onLogin }) => {
                 <button
                   type="button"
                   onClick={handleMetaMaskLogin}
-                  disabled={loading}
+                  disabled={loading || !metamaskAvailable}
+                  title={!metamaskAvailable ? "Install MetaMask to use wallet login" : undefined}
                   style={{
                     width: "100%",
                     padding: "12px",
@@ -312,7 +351,8 @@ const Login = ({ onLogin }) => {
                     color: "#fff",
                     border: "none",
                     borderRadius: "8px",
-                    cursor: "pointer",
+                    cursor: metamaskAvailable ? "pointer" : "not-allowed",
+                    opacity: metamaskAvailable ? 1 : 0.5,
                     fontWeight: 600,
                     fontSize: "14px",
                     display: "flex",
@@ -321,7 +361,11 @@ const Login = ({ onLogin }) => {
                     gap: "8px",
                   }}
                 >
-                  {loading ? "Connecting..." : "Login with MetaMask"}
+                  {!metamaskAvailable
+                    ? "MetaMask not detected"
+                    : loading
+                    ? "Connecting..."
+                    : "Login with MetaMask"}
                 </button>
               </form>
             )}
