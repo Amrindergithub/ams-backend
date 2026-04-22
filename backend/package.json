@@ -10,7 +10,10 @@
     "lint": "eslint \"./**/*.js\"",
     "test": "mocha tests/v1/test --exit",
     "migrate": "truffle migrate --reset",
-    "compile": "truffle compile"
+    "migrate:full": "truffle migrate --reset && node scripts/sync-contract-addrs.js",
+    "compile": "truffle compile",
+    "seed": "node scripts/seed_users.js && node scripts/seed_attendance.js 2414204 5",
+    "seed:users": "node scripts/seed_users.js"
   },
   "repository": {
     "type": "git",
