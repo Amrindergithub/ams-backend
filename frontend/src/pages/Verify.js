@@ -73,8 +73,12 @@ const Verify = () => {
         <div className="verify-hero-glow" />
         <form onSubmit={handleVerify} className="verify-form">
           <div className="verify-input-wrap">
-            <span className="verify-input-icon">&#9906;</span>
+            <span className="verify-input-icon" aria-hidden="true">&#9906;</span>
+            <label htmlFor="verify-hash" className="visually-hidden">
+              Attendance hash or tx id
+            </label>
             <input
+              id="verify-hash"
               className="verify-input mono"
               value={hash}
               onChange={(e) => setHash(e.target.value)}
@@ -82,7 +86,14 @@ const Verify = () => {
               autoFocus
             />
             {hash && (
-              <button type="button" className="verify-clear" onClick={() => setHash("")}>&times;</button>
+              <button
+                type="button"
+                className="verify-clear"
+                onClick={() => setHash("")}
+                aria-label="Clear input"
+              >
+                &times;
+              </button>
             )}
           </div>
           <button type="submit" className="btn-grad" disabled={loading}>

@@ -53,14 +53,21 @@ const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) =
   return (
     <header className="navbar">
       <div className="navbar-left">
-        <button className="navbar-toggle" onClick={onToggleSidebar}>&#9776;</button>
+        <button
+          className="navbar-toggle"
+          onClick={onToggleSidebar}
+          aria-label="Toggle sidebar"
+        >
+          &#9776;
+        </button>
         <div className="navbar-search">
-          <span className="navbar-search-icon">&#9906;</span>
+          <span className="navbar-search-icon" aria-hidden="true">&#9906;</span>
           <input
             className="navbar-search-input"
             placeholder="Search student, tx hash, block..."
+            aria-label="Search"
           />
-          <span className="navbar-search-kbd">⌘K</span>
+          <span className="navbar-search-kbd" aria-hidden="true">⌘K</span>
         </div>
       </div>
       <div className="navbar-right">
@@ -91,7 +98,14 @@ const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) =
               <span className="user-name">{user.name || user.email}</span>
               <span className="user-handle mono">{handle}</span>
             </div>
-            <button className="user-logout" onClick={onLogout} title="Logout">⎋</button>
+            <button
+              className="user-logout"
+              onClick={onLogout}
+              title="Logout"
+              aria-label="Log out"
+            >
+              ⎋
+            </button>
           </div>
         )}
       </div>
