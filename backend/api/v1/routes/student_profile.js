@@ -2,7 +2,6 @@ const router = require("express").Router();
 const { internalServerError } = require("../utils/response");
 const StudentProfile = require("../models/student_profile");
 const BlockchainAttendance = require("../models/blockchain_attendance");
-const Session = require("../models/session");
 const AuthMiddlewares = require("../middlewares/auth");
 const { buildModuleFilter } = require("../utils/module_scope");
 const {

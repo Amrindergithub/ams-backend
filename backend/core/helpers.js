@@ -26,11 +26,4 @@ module.exports.joinWithForwardSlash = (...args) => {
   return res.trim().substr(1);
 };
 
-module.exports.getValuesArrayFromMap = (map) => {
-  var list = [];
-
-  for (const [_, value] of Object.entries(map)) {
-    list.push(value);
-  }
-  return list;
-};
+module.exports.getValuesArrayFromMap = (map) => Object.values(map);
