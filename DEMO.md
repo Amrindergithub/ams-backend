@@ -58,7 +58,7 @@ Highlights:
 
 Go to **Sessions → New session**. Fill course + time → submit.
 
-Backend path: `POST /api/v1/session/create` (admin-only middleware) writes a
+Backend path: `POST /api/v1/sessions/create` (admin-only middleware) writes a
 Session doc with a 32-byte `qrToken` that expires at session end time.
 
 Switch to QR display:
@@ -97,7 +97,7 @@ Student dashboard:
 - NFT tier progress bar ("next tier in N sessions").
 - Recent check-ins list with copyable tx hashes.
 
-Data source: `GET /api/v1/attendance/student/:studentId`.
+Data source: `GET /api/v1/students/profile/:studentId` + `GET /api/v1/blockchain/records`.
 
 ## 6 · NFT certificates (75 s) · design #07 + #08
 
@@ -136,7 +136,7 @@ Paste the attendance hash from step 4. Emphasise client-side validation:
 - 0x-prefixed 66-char ✓
 - numeric token id ✓
 
-Hit **Verify on-chain** → `POST /api/v1/attendance/verify` → calls
+Hit **Verify on-chain** → `GET /api/v1/blockchain/verify/:hash` → calls
 `AttendanceRecord.verifyAttendance(bytes32)` → shows wallet / timestamp /
 block number. If the hash was never committed, renders the "Not found
 on-chain" verdict.

@@ -112,8 +112,8 @@ Demo walkthrough (10-min marker tour) in [`DEMO.md`](./DEMO.md).
 
 - `POST /api/v1/auth/login` — email + password
 - `POST /api/v1/auth/wallet-login` — sign-in-with-Ethereum flow
-- `GET  /api/v1/session/active` — current QR session
-- `POST /api/v1/attendance/checkin` — student QR check-in
+- `GET  /api/v1/sessions/qr/:token` — resolve a QR token to a session
+- `POST /api/v1/sessions/check-in` — student QR check-in
 - `GET  /api/v1/nft/tier-stats` — per-tier NFT distribution (dashboard panel)
 - `GET  /api/v1/nft/tiers`, `POST /api/v1/nft/mint`, `GET /api/v1/nft/student/:wallet`, `GET /api/v1/nft/certificate/:tokenId`
 - Interactive docs: [http://localhost:5001/explorer](http://localhost:5001/explorer)
@@ -196,17 +196,23 @@ core flow used in `DEMO.md` and the Postman collection.
 | Method | Path | Purpose |
 | ------ | ---- | ------- |
 | POST   | `/api/v1/auth/login`                    | Email + password login |
-| POST   | `/api/v1/auth/wallet-login`             | Sign-in-with-Ethereum |
-| POST   | `/api/v1/auth/register`                 | Admin / student registration |
-| POST   | `/api/v1/auth/refresh`                  | Exchange refresh token |
-| POST   | `/api/v1/session/create`                | Admin creates a live session + QR token |
-| GET    | `/api/v1/session/all`                   | Admin lists sessions (module-scoped) |
-| GET    | `/api/v1/session/qr/:token`             | Resolve QR token → session metadata |
-| POST   | `/api/v1/session/check-in`              | Student check-in → contract commit |
-| POST   | `/api/v1/session/check-out`             | Student check-out |
-| PATCH  | `/api/v1/session/end/:id`               | Admin closes an active session |
-| POST   | `/api/v1/attendance/verify`             | Public: verify hash on-chain |
-| GET    | `/api/v1/attendance/student/:id`        | Per-student attendance history |
+| POST   | `/api/v1/auth/login/wallet`             | Sign-in-with-Ethereum |
+| POST   | `/api/v1/auth/register`                 | User registration |
+| POST   | `/api/v1/sessions/create`               | Admin creates a live session + QR token |
+| GET    | `/api/v1/sessions/all`                  | Admin lists sessions (module-scoped) |
+| GET    | `/api/v1/sessions/qr/:token`            | Resolve QR token → session metadata |
+| POST   | `/api/v1/sessions/check-in`             | Student check-in → contract commit |
+| POST   | `/api/v1/sessions/check-out`            | Student check-out |
+| PATCH  | `/api/v1/sessions/end/:id`              | Admin closes an active session |
+| POST   | `/api/v1/blockchain/check-in`           | Record attendance directly (admin tooling) |
+| GET    | `/api/v1/blockchain/verify/:hash`       | Public: verify hash on-chain |
+| GET    | `/api/v1/blockchain/records`            | Admin: attendance history (module-scoped) |
+| GET    | `/api/v1/blockchain/export/csv`         | Admin: CSV export |
+| POST   | `/api/v1/students/register`             | Student profile bootstrap |
+| PATCH  | `/api/v1/students/wallet/:studentId`    | Register / update wallet address |
+| GET    | `/api/v1/students/profile/:studentId`   | Fetch student profile + stats |
+| GET    | `/api/v1/students/all`                  | Admin: list students (module-scoped) |
+| GET    | `/api/v1/students/flagged`              | Admin: students below 75 % threshold |
 | GET    | `/api/v1/nft/tiers`                     | Tier definitions + running totals |
 | GET    | `/api/v1/nft/tier-stats`                | Per-tier minted counts |
 | POST   | `/api/v1/nft/mint`                      | Admin: mint tier certificate |

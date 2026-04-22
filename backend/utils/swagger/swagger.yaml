@@ -1,13 +1,17 @@
 openapi: 3.0.0
 info:
   version: 1.0.0
-  title: Rest API Starter Explorer
-  description: A proposed openAPI explorer for Rest Api Starter Template
+  title: AMS DApp API
+  description: |
+    REST API for the AMS DApp — a blockchain-backed Attendance Management
+    System (CN6035). Serves the React client at :3000 and talks to
+    MongoDB + a Ganache chain via Truffle-managed contracts
+    (`AttendanceRecord`, `AttendanceNFT`).
 schemes:
   - http
 servers:
-  - url: http://localhost:3000/api/v1
-    description: Development server
+  - url: http://localhost:5001/api/v1
+    description: Local development
 tags:
   - name: Auth
     description: Authentication and authorization operations
@@ -15,6 +19,12 @@ tags:
     description: Authentication for Admin
   - name: User
     description: Routes related to End User
+  - name: Session
+    description: Live sessions + QR check-in / check-out (admin-gated where noted)
+  - name: Attendance
+    description: Attendance history + public on-chain verification
+  - name: Student
+    description: Student profile + wallet registration
   - name: NFT
     description: Attendance NFT certificate minting and lookup (AttendanceNFT contract)
 paths:
@@ -604,6 +614,411 @@ paths:
                       totalMinted:
                         type: string
                         example: "3"
+        "500":
+          description: Internal Server Error
+  /sessions/create:
+    post:
+      tags:
+        - Session
+      summary: Admin creates a live session (with QR token)
+      description: |
+        Admin-only. Generates a 32-byte random `qrToken` that expires at the
+        session end time. Lecturers may only create sessions for modules in
+        their scope; `super_admin` bypasses the filter.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [courseId, courseName, date, startTime, endTime]
+              properties:
+                courseId:
+                  type: string
+                  example: CN6035
+                courseName:
+                  type: string
+                  example: Blockchain Applications
+                date:
+                  type: string
+                  format: date
+                  example: "2026-04-22"
+                startTime:
+                  type: string
+                  example: "10:00"
+                endTime:
+                  type: string
+                  example: "12:00"
+      responses:
+        "201":
+          description: Session created; returns `sessionId`, `qrToken`, `qrExpiresAt`.
+        "400":
+          description: Missing required field.
+        "403":
+          description: Admin not assigned to this module.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /sessions/check-in:
+    post:
+      tags:
+        - Session
+      summary: Student check-in via QR token
+      description: |
+        Hashes `(studentId, courseId, date)` as keccak256 and submits to
+        `AttendanceRecord.recordAttendance`. Duplicates revert at the
+        contract level (anti-replay).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qrToken, studentId]
+              properties:
+                qrToken:
+                  type: string
+                studentId:
+                  type: string
+                  example: u2414204
+                walletAddress:
+                  type: string
+      responses:
+        "201":
+          description: Check-in recorded; returns `attendanceHash`, `txHash`, `blockNumber`.
+        "400":
+          description: Missing field or student already checked in.
+        "404":
+          description: Invalid QR token or student not registered.
+        "500":
+          description: Internal Server Error
+  /sessions/check-out:
+    post:
+      tags:
+        - Session
+      summary: Student check-out
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qrToken, studentId]
+              properties:
+                qrToken:
+                  type: string
+                studentId:
+                  type: string
+      responses:
+        "200":
+          description: Checked out; returns `checkOutTime` + `durationMinutes`.
+        "400":
+          description: Student did not check in, or already checked out.
+        "404":
+          description: Session not found.
+        "500":
+          description: Internal Server Error
+  /sessions/all:
+    get:
+      tags:
+        - Session
+      summary: List sessions visible to the caller (module-scoped)
+      responses:
+        "200":
+          description: Array of `Session` docs.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /sessions/qr/{token}:
+    get:
+      tags:
+        - Session
+      summary: Resolve a QR token to session metadata (public)
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session metadata for the UI.
+        "404":
+          description: Invalid or expired QR token.
+        "500":
+          description: Internal Server Error
+  /sessions/{id}:
+    get:
+      tags:
+        - Session
+      summary: Fetch a single session (admin, module-scoped)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session detail.
+        "403":
+          description: Session belongs to a module outside your scope.
+        "404":
+          description: Session not found.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /sessions/end/{id}:
+    patch:
+      tags:
+        - Session
+      summary: Close a session (admin, module-scoped)
+      description: Marks the session inactive and force-checks-out anyone still checked in.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session closed.
+        "403":
+          description: Outside your module scope.
+        "404":
+          description: Session not found.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /blockchain/check-in:
+    post:
+      tags:
+        - Attendance
+      summary: Direct on-chain attendance record (admin tooling)
+      description: |
+        Lower-level endpoint used by the admin check-in screen (design #04);
+        the student flow goes through `/sessions/check-in` instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [studentId, courseId, date]
+              properties:
+                studentId:
+                  type: string
+                courseId:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                walletAddress:
+                  type: string
+      responses:
+        "201":
+          description: Recorded + mirrored in MongoDB.
+        "400":
+          description: Missing field / duplicate commit.
+        "500":
+          description: Internal Server Error
+  /blockchain/verify/{hash}:
+    get:
+      tags:
+        - Attendance
+      summary: Verify an attendance hash on-chain (public)
+      description: |
+        Accepts a raw 64-char hex digest, a 0x-prefixed 66-char tx hash,
+        or a numeric token id. Hits `AttendanceRecord.verifyAttendance` and
+        joins the result with the off-chain `BlockchainAttendance` doc for
+        UI-friendly metadata.
+      parameters:
+        - in: path
+          name: hash
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Verdict + on-chain + off-chain metadata.
+        "404":
+          description: Hash not found on-chain.
+        "500":
+          description: Internal Server Error
+  /blockchain/records:
+    get:
+      tags:
+        - Attendance
+      summary: Admin-scoped attendance history
+      responses:
+        "200":
+          description: Array of `BlockchainAttendance` docs.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /blockchain/records/{id}:
+    delete:
+      tags:
+        - Attendance
+      summary: Remove an off-chain mirror row (admin only)
+      description: |
+        Deletes the MongoDB mirror only — the on-chain record is immutable
+        by design and cannot be undone.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Removed.
+        "404":
+          description: Record not found.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /blockchain/export/csv:
+    get:
+      tags:
+        - Attendance
+      summary: CSV export of attendance records (admin-scoped)
+      responses:
+        "200":
+          description: text/csv stream.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /students/register:
+    post:
+      tags:
+        - Student
+      summary: Bootstrap a student profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [studentId, name, email]
+              properties:
+                studentId:
+                  type: string
+                name:
+                  type: string
+                email:
+                  type: string
+                courseId:
+                  type: string
+                walletAddress:
+                  type: string
+      responses:
+        "201":
+          description: Profile created.
+        "400":
+          description: Missing field.
+        "409":
+          description: Student already registered.
+        "500":
+          description: Internal Server Error
+  /students/wallet/{studentId}:
+    patch:
+      tags:
+        - Student
+      summary: Register or update a student's wallet address
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [walletAddress]
+              properties:
+                walletAddress:
+                  type: string
+      responses:
+        "200":
+          description: Wallet updated.
+        "404":
+          description: Student not found.
+        "500":
+          description: Internal Server Error
+  /students/profile/{studentId}:
+    get:
+      tags:
+        - Student
+      summary: Fetch student profile + attendance stats
+      parameters:
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Profile + totals.
+        "404":
+          description: Not found.
+        "500":
+          description: Internal Server Error
+  /students/all:
+    get:
+      tags:
+        - Student
+      summary: List students visible to the caller (module-scoped)
+      responses:
+        "200":
+          description: Array of `StudentProfile` docs.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /students/flagged:
+    get:
+      tags:
+        - Student
+      summary: Students below the 75 % attendance threshold (admin)
+      responses:
+        "200":
+          description: Flagged-for-review list.
+        "500":
+          description: Internal Server Error
+      security:
+        - bearerAuth: []
+  /nft/tier-stats:
+    get:
+      tags:
+        - NFT
+      summary: Per-tier minted counts
+      description: Powers the dashboard NFT-distribution widget.
+      responses:
+        "200":
+          description: Counts keyed by tier (`bronze`, `silver`, `gold`, `platinum`).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: integer
         "500":
           description: Internal Server Error
 components:
