@@ -47,8 +47,28 @@ function _configureServer(app) {
   app.use(bodyParser.json({ limit: MAX_REQ_BODY_SIZE }));
   app.use(bodyParser.urlencoded({ extended: true }));
 
-  // for websites, to allow cross origin api access
-  app.use(cors());
+  // for websites, to allow cross origin api access — locked to an
+  // explicit allow-list. Override via ALLOWED_ORIGINS (comma-separated)
+  // in .env; default keeps the local CRA dev server working out of the box.
+  const allowedOrigins = (
+    process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000"
+  )
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.use(
+    cors({
+      origin(origin, callback) {
+        // allow non-browser clients (curl, Postman, server-to-server) which
+        // omit the Origin header, and exact matches from the allow-list.
+        if (!origin || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error(`CORS: origin ${origin} not allowed`));
+      },
+      credentials: true,
+    })
+  );
 
   // logs request to console
   console.log("Setting up request logging...");
