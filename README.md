@@ -83,7 +83,9 @@ Truffle + Node live in the same folder because `api/v1/services/blockchain.js` a
 
 ```bash
 npm install
-node index.js      # API on :5001, Swagger at /explorer
+npm run migrate:full    # truffle migrate --reset + sync contract addresses into .env
+npm run seed            # idempotent: seeds admin + student + course docs
+node index.js           # API on :5001, Swagger at /explorer
 ```
 
 **Frontend** (from `ams_web/frontend/`, in a separate terminal):
@@ -92,6 +94,14 @@ node index.js      # API on :5001, Swagger at /explorer
 npm install
 npm start          # React dev server on :3000
 ```
+
+**Optional — sanity check** before running the stack:
+
+```bash
+./scripts/preflight.sh    # pings Mongo :27017, Ganache :7545, API :5001, CRA :3000
+```
+
+Demo walkthrough (10-min marker tour) in [`DEMO.md`](./DEMO.md).
 
 ## Test credentials (dev DB `ams-dapp-dev`)
 
@@ -107,6 +117,155 @@ npm start          # React dev server on :3000
 - `GET  /api/v1/nft/tier-stats` — per-tier NFT distribution (dashboard panel)
 - `GET  /api/v1/nft/tiers`, `POST /api/v1/nft/mint`, `GET /api/v1/nft/student/:wallet`, `GET /api/v1/nft/certificate/:tokenId`
 - Interactive docs: [http://localhost:5001/explorer](http://localhost:5001/explorer)
+
+## Architecture
+
+```
+                         ┌─────────────────────┐
+                         │   MetaMask (Ext.)   │
+                         │  signer / chainId   │
+                         └──────────┬──────────┘
+                                    │ JSON-RPC
+┌──────────────────┐   REST   ┌─────▼─────┐   JSON-RPC   ┌──────────────┐
+│  React SPA :3000 │◄────────►│ Express   │◄────────────►│ Ganache :7545│
+│  (student+admin) │          │ API :5001 │              │ (chainId 1337│
+└──────────┬───────┘          │  Mongoose │              │  Truffle)    │
+           │                  │  JWT      │              └──────┬───────┘
+           │                  └─────┬─────┘                     │
+           │                        │                           │
+           │                    Mongoose                     ABI via
+           │                        ▼                     build/contracts/
+           │                 ┌──────────────┐                   ▼
+           │                 │  MongoDB     │             AttendanceRecord
+           │                 │  :27017      │             AttendanceNFT
+           │                 └──────────────┘             (Solidity 0.8)
+           │
+     OpenAPI /explorer  •  static build served by CRA dev-server in dev
+```
+
+## Data model
+
+**On-chain (immutable, verifiable):**
+
+- `AttendanceRecord.records[]` — `(student, attendanceHash, timestamp)`. The
+  hash is `keccak256(studentId || courseId || date)`; the contract rejects
+  duplicates so the record doubles as an anti-replay guard.
+- `AttendanceNFT.certificates[]` — `(student, studentId, tier,
+  sessionsAttended, issuedAt)`. Soul-bound: no `transferFrom`, one tier per
+  wallet enforced by `hasTier[student][tier]`.
+
+**Off-chain (MongoDB, `ams-dapp-dev`):**
+
+- `users` — email / password hash (bcrypt) / role (`admin` | `student` |
+  `super_admin`) / JWT refresh token.
+- `studentprofiles` — studentId, wallet, totalCheckIns, totalCheckOuts.
+- `sessions` — course metadata, `qrToken` (32-byte random), `qrExpiresAt`,
+  embedded `checkIns[]` array.
+- `blockchainattendances` — mirror of on-chain commits plus the original
+  `studentId` + `courseId` + `txHash` for UI display.
+
+**Why split?** The chain cannot hold PII (student names / emails) without
+violating GDPR. The hybrid model stores only cryptographic commitments
+on-chain and keeps mutable metadata in Mongo, letting the verifier endpoint
+prove integrity without leaking identity.
+
+## Auth model
+
+Two login paths feed the same JWT session:
+
+1. **Email + password** (`POST /api/v1/auth/login`) — bcrypt-verified, issues
+   an access token (short-lived) and refresh token (longer). Admin accounts
+   additionally require `adminApproved: true` set by a super-admin.
+2. **Sign-in-with-Ethereum** (`POST /api/v1/auth/wallet-login`) — the client
+   signs a server-issued nonce with MetaMask; the API recovers the address
+   via `ethers.verifyMessage` and matches it to a `StudentProfile`.
+
+Admin-only endpoints layer a module-scope filter on top of the JWT check
+(`api/v1/utils/module_scope.js`): a lecturer can only create / view sessions
+for modules listed in their `modules[]` claim. `super_admin` bypasses the
+scope filter.
+
+CORS is locked down via an allow-list (`backend/core/server.js`) driven by
+`ALLOWED_ORIGINS` — defaults to `http://localhost:3000,http://127.0.0.1:3000`.
+
+## Key endpoints
+
+Full spec at `http://localhost:5001/explorer`. The table below covers the
+core flow used in `DEMO.md` and the Postman collection.
+
+| Method | Path | Purpose |
+| ------ | ---- | ------- |
+| POST   | `/api/v1/auth/login`                    | Email + password login |
+| POST   | `/api/v1/auth/wallet-login`             | Sign-in-with-Ethereum |
+| POST   | `/api/v1/auth/register`                 | Admin / student registration |
+| POST   | `/api/v1/auth/refresh`                  | Exchange refresh token |
+| POST   | `/api/v1/session/create`                | Admin creates a live session + QR token |
+| GET    | `/api/v1/session/all`                   | Admin lists sessions (module-scoped) |
+| GET    | `/api/v1/session/qr/:token`             | Resolve QR token → session metadata |
+| POST   | `/api/v1/session/check-in`              | Student check-in → contract commit |
+| POST   | `/api/v1/session/check-out`             | Student check-out |
+| PATCH  | `/api/v1/session/end/:id`               | Admin closes an active session |
+| POST   | `/api/v1/attendance/verify`             | Public: verify hash on-chain |
+| GET    | `/api/v1/attendance/student/:id`        | Per-student attendance history |
+| GET    | `/api/v1/nft/tiers`                     | Tier definitions + running totals |
+| GET    | `/api/v1/nft/tier-stats`                | Per-tier minted counts |
+| POST   | `/api/v1/nft/mint`                      | Admin: mint tier certificate |
+| GET    | `/api/v1/nft/student/:wallet`           | Certificates held by a wallet |
+| GET    | `/api/v1/nft/certificate/:tokenId`      | Single certificate lookup |
+
+## Testing
+
+- **Backend unit tests** — `cd backend && npm test` runs the Mocha auth +
+  helper suites. Uses an isolated `NODE_ENV=test` logger (see
+  `core/logger.js`) so the suite output stays clean.
+- **Contracts** — `cd backend && npx truffle test` exercises the record /
+  mint flows on a throwaway Ganache instance. NatSpec on both contracts
+  doubles as `solc` docs.
+- **Frontend build** — `cd frontend && CI=true npm run build` is the green
+  gate used before every commit during the polish pass.
+- **Postman collection** — `docs/ams-dapp.postman_collection.json` — import
+  into Postman, run top-to-bottom; collection variables auto-capture
+  tokens and the attendance hash.
+
+## Known limitations & Phase 2 roadmap
+
+- **Single deployer key.** The backend holds the Ganache deployer and is
+  the implicit issuer for all mints; realistic for the Phase 1 scope but
+  flagged as Phase 2 work (move to a multi-sig / role-gated mint).
+- **Email delivery stubbed.** `SENDGRID_API_KEY` is intentionally unset —
+  verification emails are emitted to the server log. Flip one env var to
+  go live.
+- **Soul-bound, not ERC-721.** Transferable certificates don't fit the
+  academic-credential model; the Phase 2 plan is a full ERC-5484
+  implementation with revocation hooks for academic appeals.
+- **Chain:** Ganache only. Phase 2 will redeploy to a public L2 testnet
+  (Base Sepolia / Arbitrum Sepolia) once the issuer-key custody question
+  is resolved.
+- **Flutter client** lives in a sibling tree and is parked demo-ready; not
+  part of this submission bundle.
+
+## Academic reflection
+
+Building the hybrid on/off-chain model made the privacy trade-offs concrete
+— every field that lives on-chain had to be justified against the GDPR
+right-to-erasure. The NatSpec pass forced me to re-read my own contracts as
+a stranger would, which surfaced the anti-replay property of the hash-
+unique constraint (previously implicit). Given more time I would move the
+mint authority behind a role-gated facade so a compromised deployer key
+can't unilaterally issue credentials, and replace the CRA toolchain with
+Vite to shed most of the build-time audit noise.
+
+## CN6035 rubric mapping
+
+| Rubric band | Where to look |
+| --- | --- |
+| Smart contracts + testing | `backend/contracts/AttendanceRecord.sol`, `backend/contracts/AttendanceNFT.sol`, `backend/test/` (Truffle) |
+| DApp integration (UI ↔ chain) | `frontend/src/utils/wallet.js`, `frontend/src/pages/ScanQR.js`, `backend/api/v1/services/{blockchain,nft}.js` |
+| Authentication & security | `backend/api/v1/controllers/auth.js`, `backend/api/v1/middlewares/auth.js`, `backend/core/server.js` (CORS), `backend/core/jwt.js` |
+| Off-chain persistence | `backend/api/v1/models/`, `backend/core/db.js` |
+| UI / UX | `frontend/src/pages/*`, `frontend/src/context/ToastContext.js`, `frontend/src/components/{Skeleton,NotFound}.js`, `frontend/src/App.css` |
+| API docs | `backend/utils/swagger/swagger.yaml`, `/api/v1/explorer` endpoint |
+| Build / ops | `backend/scripts/{seed_users,seed_attendance,sync-contract-addrs}.js`, `scripts/preflight.sh`, `README.md`, `DEMO.md` |
 
 ## Known audit notes
 
