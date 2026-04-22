@@ -157,7 +157,9 @@ const Analytics = () => {
           </div>
         </div>
         {studentEntries.length === 0 ? (
-          <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>No data yet.</p>
+          <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
+            No data yet — record a first attendance via a live session to populate the leaderboard.
+          </p>
         ) : (
           <table className="data-table dash-table">
             <thead>

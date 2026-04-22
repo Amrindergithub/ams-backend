@@ -131,7 +131,28 @@ const Transactions = () => {
       <div className="panel" style={{ padding: 0, overflow: "hidden" }}>
         {filtered.length === 0 ? (
           <div className="empty-state" style={{ padding: "48px 20px" }}>
-            <p style={{ color: "var(--text-muted)" }}>No transactions match your filters.</p>
+            {records.length === 0 ? (
+              <p style={{ color: "var(--text-muted)" }}>
+                No on-chain records yet — check in via a session to populate the ledger.
+              </p>
+            ) : (
+              <>
+                <p style={{ color: "var(--text-muted)" }}>No transactions match your filters.</p>
+                {(filter || activeFilter !== "all") && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ marginTop: "12px" }}
+                    onClick={() => {
+                      setFilter("");
+                      setActiveFilter("all");
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </>
+            )}
           </div>
         ) : (
           <div className="tx-list">

@@ -96,7 +96,26 @@ const Students = () => {
         {filtered.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">{"\uD83C\uDF93"}</div>
-            <p>No students found</p>
+            {students.length === 0 ? (
+              <>
+                <p>No students yet</p>
+                <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "6px" }}>
+                  Students appear here once they register via the student portal.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>No results for &ldquo;{filter}&rdquo;</p>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setFilter("")}
+                  style={{ marginTop: "10px" }}
+                >
+                  Clear filters
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <table className="data-table">
