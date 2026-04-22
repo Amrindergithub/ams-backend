@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import API from "../utils/api";
+import { PageSkeleton } from "../components/Skeleton";
 
 // Certificate gallery (design #07). Holographic tier cards with shine
 // effect, token id + block data, click for big detail overlay (#06).
@@ -53,7 +54,7 @@ const MyCertificates = () => {
   };
 
   if (loading) {
-    return <div className="loading-container"><div className="spinner" />Loading certificates...</div>;
+    return <PageSkeleton title="My Certificates" cards={4} rows={3} />;
   }
 
   if (!walletAddress) {

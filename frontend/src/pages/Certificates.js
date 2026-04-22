@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getAllStudents } from "../utils/api";
 import API from "../utils/api";
+import { PageSkeleton } from "../components/Skeleton";
 
 const TIERS = [
   { name: "Bronze", threshold: 5, color: "#cd7f32", emoji: "\uD83E\uDD49" },
@@ -68,7 +69,7 @@ const Certificates = () => {
   };
 
   if (loading) {
-    return <div className="loading-container"><div className="spinner"></div>Loading certificates...</div>;
+    return <PageSkeleton title="Certificates" cards={4} rows={4} />;
   }
 
   return (

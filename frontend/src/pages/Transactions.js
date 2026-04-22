@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getRecords, getAllStudents } from "../utils/api";
+import { PageSkeleton } from "../components/Skeleton";
 
 // Block explorer screen (design #08). Shows every on-chain attendance record
 // as a row, Etherscan-style, with filter chips + search.
@@ -72,7 +73,7 @@ const Transactions = () => {
   const latestBlock = records.reduce((max, r) => Math.max(max, r.blockNumber || 0), 0);
 
   if (loading) {
-    return <div className="loading-container"><div className="spinner" />Loading transactions...</div>;
+    return <PageSkeleton title="Block Explorer" cards={0} rows={8} />;
   }
 
   return (

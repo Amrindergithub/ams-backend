@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getStudentProfile } from "../utils/api";
 import API from "../utils/api";
+import { PageSkeleton } from "../components/Skeleton";
 
 // Student portal dashboard (design #05). Ring gauge for attendance rate,
 // tier progress card, next-action CTA, recent check-ins list.
@@ -70,7 +71,7 @@ const StudentView = () => {
     setTimeout(() => setCopied(null), 1200);
   };
 
-  if (loading) return <div className="loading-container"><div className="spinner" />Loading your profile...</div>;
+  if (loading) return <PageSkeleton title="Student Portal" cards={3} rows={4} />;
 
   if (error) {
     return (

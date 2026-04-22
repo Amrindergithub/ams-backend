@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getAllStudents } from "../utils/api";
+import { PageSkeleton } from "../components/Skeleton";
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -34,7 +35,7 @@ const Students = () => {
   });
 
   if (loading) {
-    return <div className="loading-container"><div className="spinner"></div>Loading students...</div>;
+    return <PageSkeleton title="Students" cards={2} rows={6} />;
   }
 
   return (

@@ -2308,6 +2308,47 @@ body {
   flex-shrink: 0;
 }
 
+/* -- Skeleton / shimmer placeholders -------------------------------- */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+.skeleton {
+  display: inline-block;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0px,
+    rgba(255,255,255,0.10) 40px,
+    rgba(255,255,255,0.04) 80px
+  );
+  background-size: 400px 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  gap: 8px;
+}
+.skeleton-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
 /* -- Toast stack ---------------------------------------------------- */
 .toast-stack {
   position: fixed;

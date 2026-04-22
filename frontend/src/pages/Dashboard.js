@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API, { getRecords, getAllStudents, exportCSV } from "../utils/api";
 import { useToast } from "../context/ToastContext";
+import { SkeletonCard, SkeletonRow } from "../components/Skeleton";
 
 const TIER_META = {
   Bronze:   { color: "#c97a3b", threshold: 5,  grad: "linear-gradient(90deg, #7a4520, #c97a3b)" },
@@ -142,7 +143,25 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <div className="loading-container"><div className="spinner" />Loading dashboard...</div>;
+    return (
+      <div className="dash">
+        <div className="dash-header">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <span className="eyebrow">Overview</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="skeleton" style={{ width: 320, height: 32, borderRadius: 8 }} />
+              <div className="skeleton" style={{ width: 220, height: 14, borderRadius: 6 }} />
+            </div>
+          </div>
+        </div>
+        <div className="kpi-grid" style={{ marginTop: 20 }}>
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} h={130} />)}
+        </div>
+        <div style={{ marginTop: 28 }}>
+          <SkeletonRow count={5} />
+        </div>
+      </div>
+    );
   }
 
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" });

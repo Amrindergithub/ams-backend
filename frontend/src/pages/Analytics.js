@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getRecords, getAllStudents } from "../utils/api";
+import { PageSkeleton } from "../components/Skeleton";
 
 // Analytics screen (design #09) — gradient header, KPI row, line chart
 // (attendance over last 14 days), module distribution list, leaderboard.
@@ -66,7 +67,7 @@ const Analytics = () => {
   const peakDay = series.indexOf(Math.max(...series));
 
   if (loading) {
-    return <div className="loading-container"><div className="spinner" />Loading analytics...</div>;
+    return <PageSkeleton title="Analytics" cards={3} rows={6} />;
   }
 
   return (

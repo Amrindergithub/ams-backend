@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { createSession, getAllSessions, endSession } from "../utils/api";
 import { COURSES, ROLES } from "../utils/constants";
+import { PageSkeleton } from "../components/Skeleton";
 
 // Live Session screen (design #03). Big projector-friendly QR on the left
 // with live check-in counter, session metadata + live feed on the right.
@@ -83,7 +84,7 @@ const Sessions = () => {
   };
 
   if (loading) {
-    return <div className="loading-container"><div className="spinner" />Loading sessions...</div>;
+    return <PageSkeleton title="Live Sessions" cards={0} rows={5} />;
   }
 
   const liveSession = activeQR?.sessionId
