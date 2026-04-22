@@ -1,12 +1,17 @@
 const router = require("express").Router();
 const { internalServerError } = require("../utils/response");
+const { errors, successMessages } = require("../utils/constants");
 const Session = require("../models/session");
 const StudentProfile = require("../models/student_profile");
 const BlockchainAttendance = require("../models/blockchain_attendance");
 const blockchain = require("../services/blockchain");
 const crypto = require("crypto");
+const logger = require("../../../core/logger");
 const AuthMiddlewares = require("../middlewares/auth");
 const { buildModuleFilter, isModuleInScope } = require("../utils/module_scope");
+
+const { FAILED } = errors;
+const { SUCCESS } = successMessages;
 
 // Middleware chain that guarantees req.authUser exists and the caller is an
 // admin / super_admin with adminApproved status. Reused by every admin-only
@@ -24,7 +29,7 @@ router.post("/create", adminOnly, async (req, res) => {
 
     if (!courseId || !courseName || !date || !startTime || !endTime) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "courseId, courseName, date, startTime, and endTime are required",
       });
     }
@@ -33,7 +38,7 @@ router.post("/create", adminOnly, async (req, res) => {
     // super_admin is allowed to create sessions for any module.
     if (!isModuleInScope(req.authUser, courseId)) {
       return res.status(403).json({
-        status: "failed",
+        status: FAILED,
         message: `You are not assigned to module ${courseId}`,
       });
     }
@@ -60,7 +65,7 @@ router.post("/create", adminOnly, async (req, res) => {
     await session.save();
 
     return res.status(201).json({
-      status: "success",
+      status: SUCCESS,
       message: "Session created successfully",
       data: {
         sessionId: session._id,
@@ -85,7 +90,7 @@ router.post("/check-in", async (req, res) => {
 
     if (!qrToken || !studentId) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "qrToken and studentId are required",
       });
     }
@@ -94,7 +99,7 @@ router.post("/check-in", async (req, res) => {
     const session = await Session.findOne({ qrToken, isActive: true });
     if (!session) {
       return res.status(404).json({
-        status: "failed",
+        status: FAILED,
         message: "Invalid or expired QR code",
       });
     }
@@ -105,7 +110,7 @@ router.post("/check-in", async (req, res) => {
     );
     if (existingCheckIn) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "You have already checked in for this session",
       });
     }
@@ -114,7 +119,7 @@ router.post("/check-in", async (req, res) => {
     const student = await StudentProfile.findOne({ studentId });
     if (!student) {
       return res.status(404).json({
-        status: "failed",
+        status: FAILED,
         message: "Student not registered. Please register first.",
       });
     }
@@ -134,7 +139,7 @@ router.post("/check-in", async (req, res) => {
       txHash = chainResult.txHash;
       blockNumber = chainResult.blockNumber;
     } catch (err) {
-      console.log("Blockchain recording failed, continuing with off-chain:", err.message);
+      logger.warn("Blockchain recording failed, continuing with off-chain:", err.message);
     }
 
     // Add check-in to session
@@ -168,7 +173,7 @@ router.post("/check-in", async (req, res) => {
     await student.save();
 
     return res.status(201).json({
-      status: "success",
+      status: SUCCESS,
       message: "Checked in successfully",
       data: {
         sessionId: session._id,
@@ -192,7 +197,7 @@ router.post("/check-out", async (req, res) => {
 
     if (!qrToken || !studentId) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "qrToken and studentId are required",
       });
     }
@@ -200,7 +205,7 @@ router.post("/check-out", async (req, res) => {
     const session = await Session.findOne({ qrToken });
     if (!session) {
       return res.status(404).json({
-        status: "failed",
+        status: FAILED,
         message: "Session not found",
       });
     }
@@ -208,14 +213,14 @@ router.post("/check-out", async (req, res) => {
     const checkIn = session.checkIns.find((c) => c.studentId === studentId);
     if (!checkIn) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "You have not checked in for this session",
       });
     }
 
     if (checkIn.status === "checked-out") {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "You have already checked out",
       });
     }
@@ -237,7 +242,7 @@ router.post("/check-out", async (req, res) => {
     );
 
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       message: "Checked out successfully",
       data: {
         checkOutTime: checkIn.checkOutTime,
@@ -257,7 +262,7 @@ router.get("/all", adminOnly, async (req, res) => {
       createdAt: -1,
     });
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       data: { sessions },
     });
   } catch (error) {
@@ -272,18 +277,18 @@ router.get("/:id", adminOnly, async (req, res) => {
     const session = await Session.findById(req.params.id);
     if (!session) {
       return res.status(404).json({
-        status: "failed",
+        status: FAILED,
         message: "Session not found",
       });
     }
     if (!isModuleInScope(req.authUser, session.courseId)) {
       return res.status(403).json({
-        status: "failed",
+        status: FAILED,
         message: "This session belongs to a module you do not own",
       });
     }
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       data: { session },
     });
   } catch (error) {
@@ -300,12 +305,12 @@ router.get("/qr/:token", async (req, res) => {
     });
     if (!session) {
       return res.status(404).json({
-        status: "failed",
+        status: FAILED,
         message: "Invalid or expired QR code",
       });
     }
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       data: {
         sessionId: session._id,
         courseId: session.courseId,
@@ -327,14 +332,14 @@ router.patch("/end/:id", adminOnly, async (req, res) => {
     const session = await Session.findById(req.params.id);
     if (!session) {
       return res.status(404).json({
-        status: "failed",
+        status: FAILED,
         message: "Session not found",
       });
     }
 
     if (!isModuleInScope(req.authUser, session.courseId)) {
       return res.status(403).json({
-        status: "failed",
+        status: FAILED,
         message: "This session belongs to a module you do not own",
       });
     }
@@ -352,7 +357,7 @@ router.patch("/end/:id", adminOnly, async (req, res) => {
     await session.save();
 
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       message: "Session ended",
       data: {
         totalAttendees: session.checkIns.length,

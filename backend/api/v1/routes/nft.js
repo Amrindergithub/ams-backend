@@ -1,7 +1,11 @@
 const router = require("express").Router();
 const { internalServerError } = require("../utils/response");
+const { errors, successMessages } = require("../utils/constants");
 const nft = require("../services/nft");
 const StudentProfile = require("../models/student_profile");
+
+const { FAILED } = errors;
+const { SUCCESS } = successMessages;
 
 // POST - Mint NFT certificate for a student
 router.post("/mint", async (req, res) => {
@@ -10,7 +14,7 @@ router.post("/mint", async (req, res) => {
 
     if (!studentId) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "studentId is required",
       });
     }
@@ -18,14 +22,14 @@ router.post("/mint", async (req, res) => {
     const student = await StudentProfile.findOne({ studentId });
     if (!student) {
       return res.status(404).json({
-        status: "failed",
+        status: FAILED,
         message: "Student not found",
       });
     }
 
     if (!student.walletAddress) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "Student has no wallet address registered. They must connect MetaMask first.",
       });
     }
@@ -33,7 +37,7 @@ router.post("/mint", async (req, res) => {
     const tier = nft.getEligibleTier(student.totalCheckIns);
     if (!tier) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: `Student needs at least ${nft.TIERS[0].threshold} check-ins to earn a certificate. Current: ${student.totalCheckIns}`,
       });
     }
@@ -46,7 +50,7 @@ router.post("/mint", async (req, res) => {
     );
 
     return res.status(201).json({
-      status: "success",
+      status: SUCCESS,
       message: `${tier.name} certificate minted to ${student.walletAddress}!`,
       data: {
         ...result,
@@ -58,7 +62,7 @@ router.post("/mint", async (req, res) => {
   } catch (error) {
     if (error.message?.includes("already has this tier")) {
       return res.status(400).json({
-        status: "failed",
+        status: FAILED,
         message: "Student already has this tier certificate",
       });
     }
@@ -71,7 +75,7 @@ router.get("/student/:walletAddress", async (req, res) => {
   try {
     const certs = await nft.getStudentCertificates(req.params.walletAddress);
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       data: { certificates: certs },
     });
   } catch (error) {
@@ -84,7 +88,7 @@ router.get("/certificate/:tokenId", async (req, res) => {
   try {
     const cert = await nft.getCertificate(req.params.tokenId);
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       data: { certificate: cert },
     });
   } catch (error) {
@@ -97,7 +101,7 @@ router.get("/tiers", async (req, res) => {
   try {
     const totalMinted = await nft.getTotalMinted();
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       data: {
         tiers: nft.TIERS,
         totalMinted,
@@ -113,7 +117,7 @@ router.get("/tier-stats", async (req, res) => {
   try {
     const breakdown = await nft.getTierBreakdown();
     return res.status(200).json({
-      status: "success",
+      status: SUCCESS,
       data: breakdown,
     });
   } catch (error) {
