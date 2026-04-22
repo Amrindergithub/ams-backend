@@ -16,6 +16,7 @@ import Certificates from "./pages/Certificates";
 import MyCertificates from "./pages/MyCertificates";
 import { connectWallet, isWalletConnected } from "./utils/wallet";
 import { ToastProvider } from "./context/ToastContext";
+import NotFound from "./components/NotFound";
 import "./App.css";
 
 function AppInner() {
@@ -92,7 +93,7 @@ function AppInner() {
               </div>
             </div>
           } />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<NotFound homePath="/" />} />
         </Routes>
       </Router>
     );
