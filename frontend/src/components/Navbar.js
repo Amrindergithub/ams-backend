@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
 
+// RPC URL of the chain backing the DApp — overrideable via REACT_APP_RPC_URL.
+// Defaults to the local Ganache used during development.
+const RPC_URL =
+  process.env.REACT_APP_RPC_URL || "http://127.0.0.1:7545";
+
 const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) => {
   const [blockNumber, setBlockNumber] = useState(null);
   const [gasGwei, setGasGwei] = useState(null);
@@ -10,7 +15,7 @@ const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) =
 
     const fetchChain = async () => {
       try {
-        const bnRes = await fetch("http://127.0.0.1:7545", {
+        const bnRes = await fetch(RPC_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
@@ -18,7 +23,7 @@ const Navbar = ({ walletAddress, onConnect, onToggleSidebar, user, onLogout }) =
         const bnJson = await bnRes.json();
         if (!cancelled && bnJson.result) setBlockNumber(parseInt(bnJson.result, 16));
 
-        const gpRes = await fetch("http://127.0.0.1:7545", {
+        const gpRes = await fetch(RPC_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "eth_gasPrice", params: [] }),

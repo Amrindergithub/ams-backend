@@ -1,7 +1,13 @@
 import axios from "axios";
 
+// Backend API base URL — overrideable via REACT_APP_API_BASE_URL so
+// the same bundle can point at a staging / deployed API without a
+// rebuild of the source. Defaults to the local dev API.
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:5001/api/v1";
+
 const API = axios.create({
-  baseURL: "http://localhost:5001/api/v1",
+  baseURL: API_BASE_URL,
 });
 
 API.interceptors.request.use((config) => {
