@@ -11,14 +11,33 @@ const Verify = () => {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(null);
 
+  // Accept either a 64-char hex attendance hash (AMS ledger key) or a
+  // 0x-prefixed 66-char Ethereum tx hash. Token-id lookups are numeric.
+  const isValidHash = (raw) => {
+    const v = raw.trim();
+    if (!v) return false;
+    if (/^[0-9]+$/.test(v)) return true; // numeric token id
+    if (/^[a-fA-F0-9]{64}$/.test(v)) return true; // raw 32-byte hash
+    if (/^0x[a-fA-F0-9]{64}$/.test(v)) return true; // 0x-prefixed
+    return false;
+  };
+
   const handleVerify = async (e) => {
     if (e) e.preventDefault();
-    if (!hash.trim()) return;
+    const trimmed = hash.trim();
+    if (!trimmed) return;
+    if (!isValidHash(trimmed)) {
+      setResult(null);
+      setError(
+        "That doesn't look like a valid attendance hash. Expected a 64-character hex string, a 0x-prefixed tx hash, or a numeric token id."
+      );
+      return;
+    }
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const res = await verifyAttendance(hash.trim());
+      const res = await verifyAttendance(trimmed);
       setResult(res.data.data);
     } catch (err) {
       setError("Failed to verify attendance on blockchain. Hash not found or backend unreachable.");
