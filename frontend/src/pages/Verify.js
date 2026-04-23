@@ -53,6 +53,7 @@ const Verify = () => {
   };
 
   const onChain = result?.onChain?.exists;
+  const offChainOnly = !onChain && !!result?.offChain;
 
   return (
     <div className="dash">
@@ -109,37 +110,49 @@ const Verify = () => {
 
       {/* Result */}
       {result && (
-        <div className={`verify-result ${onChain ? "ok" : "fail"}`}>
+        <div className={`verify-result ${onChain ? "ok" : offChainOnly ? "warn" : "fail"}`}>
           <div className="verify-result-head">
-            <div className={`verify-verdict-icon ${onChain ? "ok" : "fail"}`}>
-              {onChain ? "✓" : "✗"}
+            <div className={`verify-verdict-icon ${onChain ? "ok" : offChainOnly ? "warn" : "fail"}`}>
+              {onChain ? "✓" : offChainOnly ? "!" : "✗"}
             </div>
             <div>
               <div className="verify-verdict">
-                {onChain ? "Credential verified" : "Not found on-chain"}
+                {onChain
+                  ? "Credential verified"
+                  : offChainOnly
+                    ? "Off-chain match only"
+                    : "Not found on-chain"}
               </div>
               <div className="verify-verdict-sub">
                 {onChain
                   ? "This record was committed to the AMS ledger and has not been tampered with."
-                  : "No matching record in the attendance contract. Double-check the hash."}
+                  : offChainOnly
+                    ? "Found in the Mongo mirror, but no matching hash on-chain. Usually this means the chain was reset (e.g. `truffle migrate --reset`) after this record was committed."
+                    : "No matching record in the attendance contract. Double-check the hash."}
               </div>
             </div>
             {onChain && <div className="verify-seal grad-text">SIGNED</div>}
           </div>
 
-          {onChain && (
+          {(onChain || offChainOnly) && (
             <div className="verify-receipt">
-              <ReceiptRow label="Wallet" value={result.onChain.student} mono copyable onCopy={copy} k="wallet" copied={copied} />
-              <ReceiptRow
-                label="Committed at"
-                value={new Date(result.onChain.timestamp * 1000).toLocaleString()}
-              />
+              {onChain && (
+                <>
+                  <ReceiptRow label="Wallet" value={result.onChain.student} mono copyable onCopy={copy} k="wallet" copied={copied} />
+                  <ReceiptRow
+                    label="Committed at"
+                    value={new Date(result.onChain.timestamp * 1000).toLocaleString()}
+                  />
+                </>
+              )}
               {result.offChain && (
                 <>
                   <ReceiptRow label="Student ID" value={result.offChain.studentId} />
                   <ReceiptRow label="Module"     value={result.offChain.courseId} />
                   <ReceiptRow label="Date"       value={result.offChain.date} />
-                  <ReceiptRow label="Tx hash"    value={result.offChain.txHash} mono copyable onCopy={copy} k="tx" copied={copied} />
+                  {result.offChain.txHash && (
+                    <ReceiptRow label="Tx hash" value={result.offChain.txHash} mono copyable onCopy={copy} k="tx" copied={copied} />
+                  )}
                   {result.offChain.blockNumber && (
                     <ReceiptRow label="Block" value={`#${result.offChain.blockNumber}`} mono />
                   )}

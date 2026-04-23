@@ -64,6 +64,12 @@ function AppInner() {
     localStorage.removeItem("userModules");
     localStorage.removeItem("studentId");
     setUser(null);
+    // Force a hard navigate so the current role-scoped URL (e.g.
+    // /student/verify) doesn't land the now-unauthenticated tree on the
+    // branded 404 catch-all.
+    if (typeof window !== "undefined") {
+      window.location.assign("/");
+    }
   };
 
   if (!user) {
