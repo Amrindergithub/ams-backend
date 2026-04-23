@@ -16,22 +16,28 @@ import Certificates from "./pages/Certificates";
 import MyCertificates from "./pages/MyCertificates";
 import { connectWallet, isWalletConnected } from "./utils/wallet";
 import { ToastProvider } from "./context/ToastContext";
-import NotFound from "./components/NotFound";
 import "./App.css";
+
+// Read auth state synchronously so the first render is already inside the
+// authenticated tree — avoids a one-frame flash of the unauthenticated
+// landing/404 on page refresh.
+const readStoredUser = () => {
+  if (typeof window === "undefined") return null;
+  const savedEmail = localStorage.getItem("userEmail");
+  if (!savedEmail) return null;
+  return {
+    email: savedEmail,
+    name: localStorage.getItem("userName"),
+    role: localStorage.getItem("userRole") || "admin",
+  };
+};
 
 function AppInner() {
   const [walletAddress, setWalletAddress] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(readStoredUser);
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem("userEmail");
-    const savedName = localStorage.getItem("userName");
-    const savedRole = localStorage.getItem("userRole");
-    if (savedEmail) {
-      setUser({ email: savedEmail, name: savedName, role: savedRole || "admin" });
-    }
-
     const checkWallet = async () => {
       const connected = await isWalletConnected();
       if (connected && window.ethereum) {
@@ -101,7 +107,7 @@ function AppInner() {
               </div>
             </div>
           } />
-          <Route path="*" element={<NotFound homePath="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     );
