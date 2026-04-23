@@ -63,12 +63,14 @@ function AppInner() {
     localStorage.removeItem("userBackendRole");
     localStorage.removeItem("userModules");
     localStorage.removeItem("studentId");
-    setUser(null);
-    // Force a hard navigate so the current role-scoped URL (e.g.
-    // /student/verify) doesn't land the now-unauthenticated tree on the
-    // branded 404 catch-all.
+    // Skip setUser(null) — React would re-render the unauthenticated tree
+    // on the current role-scoped URL and flash the 404 before the browser
+    // nav kicks in. Hard-replace straight to / so the next paint is the
+    // landing page with a clean React state.
     if (typeof window !== "undefined") {
-      window.location.assign("/");
+      window.location.replace("/");
+    } else {
+      setUser(null);
     }
   };
 
