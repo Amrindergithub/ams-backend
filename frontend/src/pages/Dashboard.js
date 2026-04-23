@@ -165,7 +165,11 @@ const Dashboard = () => {
   }
 
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" });
-  const firstName = userName.split(" ")[0];
+  // If the stored name already carries a title (Dr./Prof./Mr./Ms.) we render
+  // it whole — otherwise prepend "Dr." as a default lecturer honorific.
+  const TITLE_RE = /^(dr\.?|prof\.?|mr\.?|mrs\.?|ms\.?)\s+/i;
+  const hasTitle = TITLE_RE.test(userName);
+  const greetingName = hasTitle ? userName : `Dr. ${userName.split(" ")[0]}`;
   const recent = records.slice(0, 8);
 
   return (
@@ -175,7 +179,7 @@ const Dashboard = () => {
         <div>
           <span className="eyebrow">Overview</span>
           <h1 className="dash-title">
-            Welcome back, <span className="grad-text">Dr. {firstName}</span>
+            Welcome back, <span className="grad-text">{greetingName}</span>
           </h1>
           <p className="dash-subtitle">
             {primaryModule} <span className="dot-sep">&middot;</span> Blockchain Attendance <span className="dot-sep">&middot;</span> {today}

@@ -218,9 +218,15 @@ module.exports.loginWithWallet = async (req, res) => {
     walletAddress: { $regex: new RegExp(`^${walletAddress}$`, "i") },
   });
 
-  return loginUser(authUser, Headers.EMAIL_KEY, res, true, {
+  // Prefer the StudentProfile name (set at registration) over the Auth
+  // `name` field — students rarely set a name on Auth directly.
+  const extras = {
     studentId: studentProfile ? studentProfile.studentId : null,
-  });
+  };
+  if (studentProfile && studentProfile.name) {
+    extras.name = studentProfile.name;
+  }
+  return loginUser(authUser, Headers.EMAIL_KEY, res, true, extras);
 };
 
 module.exports.registerInstituteUser = async (data) => {
@@ -1075,6 +1081,7 @@ async function loginUser(authUser, provider, res, _unused, extras) {
           role: savedUser.role,
           modules: savedUser.modules || [],
           email: savedUser.email,
+          name: savedUser.name || "",
           ...(extras || {}),
         });
     }

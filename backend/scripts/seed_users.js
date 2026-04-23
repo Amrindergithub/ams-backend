@@ -25,7 +25,7 @@ const Headers = require("../api/v1/utils/constants").headers;
 const ADMIN = {
   email: "lecturer@uel.ac.uk",
   password: "Admin123!",
-  name: "Amrinder Lecturer",
+  name: "Dr. Mayank",
   role: AccountConstants.accRoles.admin,
   status: AccountConstants.accountStatus.adminApproved,
   modules: ["CN6035"],
@@ -35,7 +35,7 @@ const ADMIN = {
 const STUDENT = {
   email: "u2414204@uel.ac.uk",
   password: "Student123!",
-  name: "Amrinder Bhullar",
+  name: "Amrinder",
   role: AccountConstants.accRoles.normalUser,
   status: AccountConstants.accountStatus.active,
   walletAddress: "0x82d9B534dd4620906ABCe7706244dDb1960D8b49",
@@ -59,6 +59,7 @@ async function upsertAuth(fixture) {
     existing.status = fixture.status;
     existing.provider = Headers.EMAIL_KEY;
     existing.walletAddress = fixture.walletAddress || null;
+    existing.name = fixture.name || "";
     if (fixture.modules) existing.modules = fixture.modules;
     await existing.save();
     console.log(`  updated  Auth  ${fixture.email}  (role=${fixture.role})`);
@@ -73,6 +74,7 @@ async function upsertAuth(fixture) {
     provider: Headers.EMAIL_KEY,
     walletAddress: fixture.walletAddress || null,
     modules: fixture.modules || [],
+    name: fixture.name || "",
   }).save();
   console.log(`  created  Auth  ${fixture.email}  (role=${fixture.role})`);
   return created;

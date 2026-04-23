@@ -74,7 +74,13 @@ const Login = ({ onLogin }) => {
       const token = res.data?.accessToken;
       if (token) localStorage.setItem("accessToken", token);
       localStorage.setItem("userEmail", res.data?.email || address);
-      localStorage.setItem("userName", res.data?.email?.split("@")[0] || address.slice(0, 8));
+      // Prefer backend-stored display name; fall back to email prefix /
+      // truncated wallet for unseeded accounts.
+      const walletDisplayName =
+        res.data?.name ||
+        res.data?.email?.split("@")[0] ||
+        address.slice(0, 8);
+      localStorage.setItem("userName", walletDisplayName);
       localStorage.setItem("walletAddress", address);
 
       const backendRole = res.data?.role;
@@ -93,7 +99,7 @@ const Login = ({ onLogin }) => {
 
       onLogin({
         email: res.data?.email || address,
-        name: res.data?.email?.split("@")[0] || address.slice(0, 8),
+        name: walletDisplayName,
         role: effectiveRole,
       });
       navigate(effectiveRole === "admin" ? "/admin" : "/student");
@@ -128,7 +134,12 @@ const Login = ({ onLogin }) => {
         res.data?.data?.token;
       if (token) localStorage.setItem("accessToken", token);
       localStorage.setItem("userEmail", email);
-      localStorage.setItem("userName", name || email.split("@")[0]);
+      // Prefer the name we collected at registration, otherwise fall back to
+      // the server's stored `name` (from seed or prior registration), then
+      // email prefix as a last resort.
+      const backendName = res.data?.name || res.data?.data?.name;
+      const displayName = name || backendName || email.split("@")[0];
+      localStorage.setItem("userName", displayName);
 
       // Prefer the backend's authoritative role if it comes through (admins
       // may have registered as super_admin). Fall back to the route-based
@@ -150,7 +161,7 @@ const Login = ({ onLogin }) => {
         localStorage.setItem("studentId", studentId || email);
       onLogin({
         email,
-        name: name || email.split("@")[0],
+        name: displayName,
         role: effectiveRole,
       });
       navigate(effectiveRole === "admin" ? "/admin" : "/student");

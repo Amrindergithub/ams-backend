@@ -13,6 +13,12 @@ const authSchema = new mongoose.Schema(
       min: 5,
       unique: true,
     },
+    // Display name (used by admin/lecturer accounts; students duplicate
+    // this on their StudentProfile for easier look-ups in the UI).
+    name: {
+      type: String,
+      default: "",
+    },
     password: {
       type: String,
       min: 8,
