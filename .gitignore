@@ -17,3 +17,6 @@ creds.txt
 test.js
 
 # local agent / assistant state is ignored via .git/info/exclude
+
+# macOS
+.DS_Store

@@ -32,14 +32,15 @@ Design-handoff reference shots live in `docs/screens/` (add PNGs as `02-dashboar
 
 | # | Screen | Preview |
 |---|--------|---------|
+| 01 | Landing page               | `docs/screens/01-landing.png` |
 | 02 | Admin dashboard            | `docs/screens/02-dashboard.png` |
-| 03 | Live session QR            | `docs/screens/03-sessions.png` |
-| 04 | Student scan flow          | `docs/screens/04-scan.png` |
-| 05 | Student portal             | `docs/screens/05-student.png` |
-| 06 | Certificate gallery        | `docs/screens/06-certificates.png` |
-| 07 | Credential detail overlay  | `docs/screens/07-credential.png` |
-| 08 | Block explorer             | `docs/screens/08-transactions.png` |
-| 09 | Analytics                  | `docs/screens/09-analytics.png` |
+| 03 | Sessions list              | `docs/screens/03-sessions.png` |
+| 04 | Live session QR            | `docs/screens/04-qr-display.png` |
+| 05 | Student scan flow          | `docs/screens/05-scan.png` |
+| 06 | Student portal             | `docs/screens/06-student.png` |
+| 07 | Certificates (admin)       | `docs/screens/07-certificates-admin.png` |
+| 08 | My certificates (student)  | `docs/screens/08-my-certificates.png` |
+| 09 | Block explorer             | `docs/screens/09-transactions.png` |
 | 10 | Public verifier            | `docs/screens/10-verify.png` |
 
 ## Design system
