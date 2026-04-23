@@ -1541,6 +1541,12 @@ body {
   transition: var(--transition);
 }
 .hash-pill:hover { background: rgba(0, 212, 168, 0.16); }
+.hash-pill-alt {
+  background: rgba(124, 92, 255, 0.08);
+  border-color: rgba(124, 92, 255, 0.28);
+  color: #b8a6ff;
+}
+.hash-pill-alt:hover { background: rgba(124, 92, 255, 0.16); }
 .hash-copy { opacity: 0.6; font-size: 10px; }
 
 /* Tier distribution list */

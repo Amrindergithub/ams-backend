@@ -231,6 +231,7 @@ const StudentView = () => {
                 <th>Module</th>
                 <th>Date</th>
                 <th>Tx hash</th>
+                <th>Attendance hash</th>
                 <th>Block</th>
                 <th>Status</th>
               </tr>
@@ -242,9 +243,23 @@ const StudentView = () => {
                   <td style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{r.date}</td>
                   <td>
                     {r.txHash ? (
-                      <button className="hash-pill" onClick={() => copy(r.txHash, r._id)} title="Click to copy">
+                      <button className="hash-pill" onClick={() => copy(r.txHash, r._id + "-tx")} title="Click to copy tx hash">
                         <span className="mono">{r.txHash.slice(0, 10)}…{r.txHash.slice(-4)}</span>
-                        <span className="hash-copy">{copied === r._id ? "✓" : "⎘"}</span>
+                        <span className="hash-copy">{copied === r._id + "-tx" ? "✓" : "⎘"}</span>
+                      </button>
+                    ) : (
+                      <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>—</span>
+                    )}
+                  </td>
+                  <td>
+                    {r.attendanceHash ? (
+                      <button
+                        className="hash-pill hash-pill-alt"
+                        onClick={() => copy(r.attendanceHash, r._id + "-att")}
+                        title="Click to copy attendance hash (paste into Verifier)"
+                      >
+                        <span className="mono">{r.attendanceHash.slice(0, 10)}…{r.attendanceHash.slice(-4)}</span>
+                        <span className="hash-copy">{copied === r._id + "-att" ? "✓" : "⎘"}</span>
                       </button>
                     ) : (
                       <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>—</span>
