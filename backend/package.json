@@ -4,8 +4,9 @@
   "description": "AMS DApp backend — Node/Express API + Truffle workspace for the CN6035 attendance management DApp.",
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_ENV=dev nodemon index.js",
-    "start": "NODE_ENV=prod node index.js",
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "start:prod": "NODE_ENV=prod node index.js",
     "format": "prettier \"./**/*.{js,html,json}\" --write",
     "lint": "eslint \"./**/*.js\"",
     "test": "mocha tests/v1/test --exit",

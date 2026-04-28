@@ -20,3 +20,8 @@ test.js
 
 # macOS
 .DS_Store
+
+# Task 2 (presentation + video artefacts) + design handoff screens
+# kept local only — not part of GitHub submission.
+docs/
+DEMO.md

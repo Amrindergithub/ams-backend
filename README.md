@@ -26,23 +26,6 @@ Blockchain-backed Attendance Management System for CN6035. This folder is the Ph
 | `/admin/analytics`          | #09    | Analytics                                    |
 | `/verify`                   | #10    | Public verifier                              |
 
-## Screenshots
-
-Design-handoff reference shots live in `docs/screens/` (add PNGs as `02-dashboard.png`, `03-sessions.png`, etc. — filenames match the design numbers in the table above).
-
-| # | Screen | Preview |
-|---|--------|---------|
-| 01 | Landing page               | `docs/screens/01-landing.png` |
-| 02 | Admin dashboard            | `docs/screens/02-dashboard.png` |
-| 03 | Sessions list              | `docs/screens/03-sessions.png` |
-| 04 | Live session QR            | `docs/screens/04-qr-display.png` |
-| 05 | Student scan flow          | `docs/screens/05-scan.png` |
-| 06 | Student portal             | `docs/screens/06-student.png` |
-| 07 | Certificates (admin)       | `docs/screens/07-certificates-admin.png` |
-| 08 | My certificates (student)  | `docs/screens/08-my-certificates.png` |
-| 09 | Block explorer             | `docs/screens/09-transactions.png` |
-| 10 | Public verifier            | `docs/screens/10-verify.png` |
-
 ## Design system
 
 Near-black crypto surfaces, violet → mint gradient (`#7c5cff → #00d4a8`), Geist / Geist Mono typography, tier-metallic NFT palette (bronze / silver / gold / platinum), glass panels with backdrop blur.
@@ -102,7 +85,6 @@ npm start          # React dev server on :3000
 ./scripts/preflight.sh    # pings Mongo :27017, Ganache :7545, API :5001, CRA :3000
 ```
 
-Demo walkthrough (10-min marker tour) in [`DEMO.md`](./DEMO.md).
 
 ## Test credentials (dev DB `ams-dapp-dev`)
 
@@ -192,7 +174,7 @@ CORS is locked down via an allow-list (`backend/core/server.js`) driven by
 ## Key endpoints
 
 Full spec at `http://localhost:5001/explorer`. The table below covers the
-core flow used in `DEMO.md` and the Postman collection.
+core check-in / verification flow.
 
 | Method | Path | Purpose |
 | ------ | ---- | ------- |
@@ -230,9 +212,6 @@ core flow used in `DEMO.md` and the Postman collection.
   doubles as `solc` docs.
 - **Frontend build** — `cd frontend && CI=true npm run build` is the green
   gate used before every commit during the polish pass.
-- **Postman collection** — `docs/ams-dapp.postman_collection.json` — import
-  into Postman, run top-to-bottom; collection variables auto-capture
-  tokens and the attendance hash.
 
 ## Known limitations & Phase 2 roadmap
 
@@ -272,7 +251,7 @@ Vite to shed most of the build-time audit noise.
 | Off-chain persistence | `backend/api/v1/models/`, `backend/core/db.js` |
 | UI / UX | `frontend/src/pages/*`, `frontend/src/context/ToastContext.js`, `frontend/src/components/{Skeleton,NotFound}.js`, `frontend/src/App.css` |
 | API docs | `backend/utils/swagger/swagger.yaml`, `/api/v1/explorer` endpoint |
-| Build / ops | `backend/scripts/{seed_users,seed_attendance,sync-contract-addrs}.js`, `scripts/preflight.sh`, `README.md`, `DEMO.md` |
+| Build / ops | `backend/scripts/{seed_users,seed_attendance,sync-contract-addrs}.js`, `scripts/preflight.sh`, `README.md` |
 
 ## Known audit notes
 

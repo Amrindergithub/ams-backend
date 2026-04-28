@@ -13,7 +13,12 @@ const COURSE_ID = "CN6035";
 const COURSE_NAME = "Computer and Network Security";
 const LECTURER_EMAIL = "amrinder.lecturer@uel.ac.uk";
 
-const envDbName = `${process.env.DB_NAME}-${process.env.NODE_ENV}`;
+// Match backend DB resolution in core/config.js (prod = no suffix).
+const envKey = ["dev", "test", "prod"].includes(process.env.NODE_ENV)
+  ? process.env.NODE_ENV
+  : "dev";
+const envDbName =
+  envKey === "prod" ? process.env.DB_NAME : `${process.env.DB_NAME}-${envKey}`;
 const mongoUri = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${envDbName}`;
 
 async function main() {

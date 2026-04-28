@@ -46,7 +46,13 @@ const STUDENT = {
   },
 };
 
-const envDbName = `${process.env.DB_NAME}-${process.env.NODE_ENV}`;
+// Match backend DB resolution in core/config.js so seed and runtime
+// always target the same database (prod = no suffix, dev/test = suffixed).
+const envKey = ["dev", "test", "prod"].includes(process.env.NODE_ENV)
+  ? process.env.NODE_ENV
+  : "dev";
+const envDbName =
+  envKey === "prod" ? process.env.DB_NAME : `${process.env.DB_NAME}-${envKey}`;
 const mongoUri = `mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${envDbName}`;
 
 async function upsertAuth(fixture) {
